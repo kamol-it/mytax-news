@@ -10,6 +10,7 @@ const nav = [
   { href: "/admin/articles", label: "Новости" },
   { href: "/admin/categories", label: "Рубрики" },
   { href: "/admin/media", label: "Медиафайлы" },
+  { href: "/admin/users", label: "Пользователи" },
 ];
 
 export default async function AdminLayout({

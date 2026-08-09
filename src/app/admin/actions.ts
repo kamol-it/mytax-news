@@ -14,6 +14,13 @@ async function requireSession() {
   return session;
 }
 
+/** Управление пользователями доступно только роли ADMIN. */
+async function requireAdmin() {
+  const session = await requireSession();
+  if (session.role !== "ADMIN") redirect("/admin?forbidden=1");
+  return session;
+}
+
 export async function logout() {
   await clearSessionCookie();
   redirect("/admin/login");
@@ -195,4 +202,111 @@ export async function deleteMedia(formData: FormData) {
   await removeFile(media.url);
 
   revalidatePath("/admin/media");
+}
+
+/* ------------------------------ пользователи ------------------------------ */
+
+export type UserFormState = { error?: string; ok?: string };
+
+const MIN_PASSWORD = 8;
+
+/** Создание учётной записи редактора или второго администратора. */
+export async function createUser(
+  _prev: UserFormState,
+  formData: FormData,
+): Promise<UserFormState> {
+  await requireAdmin();
+
+  const name = String(formData.get("name") ?? "").trim();
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const password = String(formData.get("password") ?? "");
+  const role = formData.get("role") === "ADMIN" ? "ADMIN" : "EDITOR";
+
+  if (!name || !email) return { error: "Укажите имя и email." };
+  if (!email.includes("@")) return { error: "Email указан неверно." };
+  if (password.length < MIN_PASSWORD) {
+    return { error: `Пароль должен быть не короче ${MIN_PASSWORD} символов.` };
+  }
+
+  const existing = await prisma.user.findUnique({ where: { email } });
+  if (existing) return { error: "Пользователь с таким email уже есть." };
+
+  const bcrypt = await import("bcryptjs");
+  await prisma.user.create({
+    data: { name, email, role, password: await bcrypt.hash(password, 10) },
+  });
+
+  revalidatePath("/admin/users");
+  return { ok: `Пользователь ${email} создан.` };
+}
+
+/** Смена пароля другому пользователю. */
+export async function resetUserPassword(
+  _prev: UserFormState,
+  formData: FormData,
+): Promise<UserFormState> {
+  await requireAdmin();
+
+  const id = String(formData.get("id") ?? "");
+  const password = String(formData.get("password") ?? "");
+  if (password.length < MIN_PASSWORD) {
+    return { error: `Пароль должен быть не короче ${MIN_PASSWORD} символов.` };
+  }
+
+  const user = await prisma.user.findUnique({ where: { id } });
+  if (!user) return { error: "Пользователь не найден." };
+
+  const bcrypt = await import("bcryptjs");
+  await prisma.user.update({
+    where: { id },
+    data: { password: await bcrypt.hash(password, 10) },
+  });
+
+  revalidatePath("/admin/users");
+  return { ok: `Пароль для ${user.email} изменён.` };
+}
+
+export async function deleteUser(formData: FormData) {
+  const session = await requireAdmin();
+  const id = String(formData.get("id") ?? "");
+
+  if (id === session.sub) return; // себя не удаляем
+
+  const admins = await prisma.user.count({ where: { role: "ADMIN" } });
+  const target = await prisma.user.findUnique({ where: { id } });
+  if (!target) return;
+  // последнего администратора не удаляем, иначе панель станет недоступной
+  if (target.role === "ADMIN" && admins <= 1) return;
+
+  await prisma.user.delete({ where: { id } });
+  revalidatePath("/admin/users");
+}
+
+/** Смена собственного пароля: доступна любой роли, требует текущий пароль. */
+export async function changeOwnPassword(
+  _prev: UserFormState,
+  formData: FormData,
+): Promise<UserFormState> {
+  const session = await requireSession();
+
+  const current = String(formData.get("current") ?? "");
+  const next = String(formData.get("password") ?? "");
+  if (next.length < MIN_PASSWORD) {
+    return { error: `Новый пароль должен быть не короче ${MIN_PASSWORD} символов.` };
+  }
+
+  const user = await prisma.user.findUnique({ where: { id: session.sub } });
+  if (!user) return { error: "Пользователь не найден." };
+
+  const bcrypt = await import("bcryptjs");
+  if (!(await bcrypt.compare(current, user.password))) {
+    return { error: "Текущий пароль неверный." };
+  }
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { password: await bcrypt.hash(next, 10) },
+  });
+
+  return { ok: "Пароль изменён." };
 }
