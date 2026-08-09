@@ -22,7 +22,7 @@ type Thread = {
 
 const texts: Record<Locale, Record<string, string>> = {
   uz: {
-    bubble: "Savol berish",
+    bubble: "Maslahatchidan so‘rang",
     title: "Maslahatchidan so‘rang",
     lead: "Savolingizni yozing — mutaxassis javob beradi. Javob shu oynada ko‘rinadi.",
     name: "Ismingiz",
@@ -42,7 +42,7 @@ const texts: Record<Locale, Record<string, string>> = {
     close: "Yopish",
   },
   ru: {
-    bubble: "Задать вопрос",
+    bubble: "Спроси консультанта",
     title: "Спроси консультанта",
     lead: "Напишите вопрос — специалист ответит. Ответ появится в этом же окне.",
     name: "Ваше имя",
@@ -62,7 +62,7 @@ const texts: Record<Locale, Record<string, string>> = {
     close: "Закрыть",
   },
   en: {
-    bubble: "Ask a question",
+    bubble: "Ask a consultant",
     title: "Ask a consultant",
     lead: "Write your question — a specialist will reply right in this window.",
     name: "Your name",

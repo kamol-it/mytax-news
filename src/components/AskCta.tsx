@@ -3,19 +3,19 @@ import type { Locale } from "@/lib/i18n";
 
 const texts: Record<Locale, { short: string; title: string; lead: string; button: string }> = {
   uz: {
-    short: "Savol berish",
+    short: "Maslahatchidan so‘rang",
     title: "Soliqlar bo‘yicha savolingiz bormi?",
     lead: "Savolingizni yozing — mutaxassis holatingizni ko‘rib chiqadi va javob beradi.",
     button: "Maslahatchidan so‘rang",
   },
   ru: {
-    short: "Задать вопрос",
+    short: "Спроси консультанта",
     title: "Остался вопрос по налогам?",
     lead: "Опишите ситуацию — консультант разберёт её и ответит в вашей ветке на сайте.",
     button: "Спроси консультанта",
   },
   en: {
-    short: "Ask a question",
+    short: "Ask a consultant",
     title: "Still have a tax question?",
     lead: "Describe your case — a consultant will review it and reply in your thread.",
     button: "Ask a consultant",
@@ -65,17 +65,3 @@ export function AskCtaBand({ locale }: { locale: Locale }) {
   );
 }
 
-/** Плавающая кнопка на телефоне — как кнопка чата. */
-export function AskCtaBubble({ locale }: { locale: Locale }) {
-  const t = texts[locale];
-  return (
-    <Link
-      href={`/${locale}/ask`}
-      aria-label={t.button}
-      className="fixed bottom-4 right-4 z-40 inline-flex items-center gap-2 rounded-full bg-accent px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-ink/20 transition active:scale-95 sm:hidden"
-    >
-      {icon}
-      {t.short}
-    </Link>
-  );
-}
