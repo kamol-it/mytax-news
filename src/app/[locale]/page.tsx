@@ -35,9 +35,6 @@ export default async function HomePage({
     return (
       <div className="rounded-xl border border-line bg-surface p-10 text-center">
         <p className="text-lg font-semibold">{t.noArticles}</p>
-        <Link href="/admin" className="mt-3 inline-block text-sm text-accent hover:underline">
-          {t.adminPanel} →
-        </Link>
       </div>
     );
   }

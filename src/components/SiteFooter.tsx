@@ -34,9 +34,6 @@ export async function SiteFooter({ locale }: { locale: Locale }) {
               {pickLocalized(p, "title", locale)}
             </Link>
           ))}
-          <Link href="/admin" className="hover:text-white">
-            {t.adminPanel}
-          </Link>
         </div>
       </div>
       <div className="border-t border-white/10 py-4 text-center text-xs">
