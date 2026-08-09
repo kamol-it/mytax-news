@@ -9,6 +9,7 @@ const nav = [
   { href: "/admin", label: "Обзор" },
   { href: "/admin/articles", label: "Новости" },
   { href: "/admin/categories", label: "Рубрики" },
+  { href: "/admin/pages", label: "Страницы" },
   { href: "/admin/media", label: "Медиафайлы" },
   { href: "/admin/users", label: "Пользователи" },
 ];

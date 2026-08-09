@@ -6,9 +6,13 @@ import { prisma } from "@/lib/prisma";
 
 export async function SiteHeader({ locale }: { locale: Locale }) {
   const t = getDictionary(locale);
-  const categories = await prisma.category.findMany({
-    orderBy: [{ position: "asc" }, { nameRu: "asc" }],
-  });
+  const [categories, pages] = await Promise.all([
+    prisma.category.findMany({ orderBy: [{ position: "asc" }, { nameRu: "asc" }] }),
+    prisma.page.findMany({
+      where: { published: true },
+      orderBy: [{ position: "asc" }, { titleRu: "asc" }],
+    }),
+  ]);
 
   return (
     <header className="bg-ink text-white">
@@ -47,6 +51,15 @@ export async function SiteHeader({ locale }: { locale: Locale }) {
               className="whitespace-nowrap rounded px-3 py-2 text-white/75 transition hover:bg-white/10 hover:text-white"
             >
               {pickLocalized(c, "name", locale)}
+            </Link>
+          ))}
+          {pages.map((p) => (
+            <Link
+              key={p.id}
+              href={`/${locale}/pages/${p.slug}`}
+              className="whitespace-nowrap rounded px-3 py-2 text-white/75 transition hover:bg-white/10 hover:text-white"
+            >
+              {pickLocalized(p, "title", locale)}
             </Link>
           ))}
         </div>

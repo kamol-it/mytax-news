@@ -77,6 +77,23 @@ const ARTICLES = [
   },
 ];
 
+
+const PAGES = [
+  {
+    slug: "about",
+    titleUz: "Biz haqimizda",
+    titleRu: "О нас",
+    titleEn: "About us",
+    position: 1,
+    bodyRu:
+      "<p>MYTAX.uz — независимый портал о налогах и отчётности в Узбекистане. Мы публикуем изменения налогового законодательства, разъяснения госорганов и практические разборы для бухгалтеров, предпринимателей и налоговых консультантов.</p><h2>Чем мы полезны</h2><ul><li>Оперативные новости о поправках в Налоговый кодекс и подзаконные акты.</li><li>Разъяснения сложных норм простым языком, с примерами расчётов.</li><li>Материалы на трёх языках: узбекском, русском и английском.</li></ul><h2>Контакты</h2><p>Предложения новостей и вопросы редакции: <a href=\"mailto:info@mytax.uz\" rel=\"noopener\">info@mytax.uz</a></p>",
+    bodyUz:
+      "<p>MYTAX.uz — O‘zbekistondagi soliqlar va hisobot bo‘yicha mustaqil portal. Biz soliq qonunchiligidagi o‘zgarishlarni, davlat organlarining tushuntirishlarini va buxgalterlar, tadbirkorlar uchun amaliy tahlillarni chop etamiz.</p><h2>Nima beramiz</h2><ul><li>Soliq kodeksiga kiritilgan o‘zgarishlar haqida tezkor yangiliklar.</li><li>Murakkab normalarni sodda tilda, hisob-kitob misollari bilan tushuntirish.</li><li>Uch tilda materiallar: o‘zbek, rus va ingliz.</li></ul><h2>Aloqa</h2><p>Tahririyat bilan bog‘lanish: <a href=\"mailto:info@mytax.uz\" rel=\"noopener\">info@mytax.uz</a></p>",
+    bodyEn:
+      "<p>MYTAX.uz is an independent portal covering taxation and reporting in Uzbekistan. We publish changes in tax law, official clarifications and practical guidance for accountants, business owners and tax advisers.</p><h2>What we offer</h2><ul><li>Timely news on amendments to the Tax Code and secondary legislation.</li><li>Plain-language explanations of complex rules, with calculation examples.</li><li>Content in three languages: Uzbek, Russian and English.</li></ul><h2>Contact</h2><p>Newsroom: <a href=\"mailto:info@mytax.uz\" rel=\"noopener\">info@mytax.uz</a></p>",
+  },
+];
+
 async function main() {
   const email = process.env.SEED_ADMIN_EMAIL ?? "admin@mytax.uz";
   const password = process.env.SEED_ADMIN_PASSWORD ?? "mytax2026";
@@ -122,6 +139,14 @@ async function main() {
         authorId: admin.id,
         categoryId: categories[categoryIndex - 1]?.id ?? null,
       },
+    });
+  }
+
+  for (const page of PAGES) {
+    await prisma.page.upsert({
+      where: { slug: page.slug },
+      update: {},
+      create: page,
     });
   }
 

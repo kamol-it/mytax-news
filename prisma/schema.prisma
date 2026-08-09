@@ -72,6 +72,26 @@ model Article {
   @@index([categoryId])
 }
 
+/// Статические страницы: «О нас», «Контакты», «Реклама» и подобные.
+model Page {
+  id   String @id @default(cuid())
+  slug String @unique
+
+  titleUz String
+  titleRu String
+  titleEn String
+
+  bodyUz String @default("")
+  bodyRu String @default("")
+  bodyEn String @default("")
+
+  published Boolean @default(true)
+  position  Int     @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model Media {
   id        String   @id @default(cuid())
   url       String

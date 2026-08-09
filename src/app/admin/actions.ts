@@ -190,6 +190,78 @@ export async function deleteCategory(formData: FormData) {
   revalidatePath("/admin/categories");
 }
 
+/* ---------------------------- статические страницы --------------------------- */
+
+export type PageFormState = { error?: string };
+
+/** Создание и правка страниц вида «О нас», «Контакты». */
+export async function savePage(
+  _prev: PageFormState,
+  formData: FormData,
+): Promise<PageFormState> {
+  await requireSession();
+
+  const id = String(formData.get("id") ?? "").trim();
+  const text = (key: string) => String(formData.get(key) ?? "").trim();
+
+  const titleRu = text("titleRu");
+  const titleUz = text("titleUz");
+  const titleEn = text("titleEn");
+  if (!titleRu && !titleUz && !titleEn) {
+    return { error: "Заголовок нужен хотя бы на одном языке." };
+  }
+
+  const data = {
+    titleUz: titleUz || titleRu || titleEn,
+    titleRu: titleRu || titleUz || titleEn,
+    titleEn: titleEn || titleRu || titleUz,
+    bodyUz: sanitizeHtml(text("bodyUz")),
+    bodyRu: sanitizeHtml(text("bodyRu")),
+    bodyEn: sanitizeHtml(text("bodyEn")),
+    published: formData.get("published") === "on",
+    position: Number(text("position")) || 0,
+  };
+
+  let slug: string;
+
+  if (id) {
+    const existing = await prisma.page.findUnique({ where: { id } });
+    if (!existing) return { error: "Страница не найдена." };
+
+    const requested = text("slug");
+    slug =
+      requested && requested !== existing.slug
+        ? await uniqueSlug(requested, async (s) =>
+            Boolean(await prisma.page.findFirst({ where: { slug: s, id: { not: id } } })),
+          )
+        : existing.slug;
+
+    await prisma.page.update({ where: { id }, data: { ...data, slug } });
+  } else {
+    slug = await uniqueSlug(text("slug") || data.titleRu, async (s) =>
+      Boolean(await prisma.page.findUnique({ where: { slug: s } })),
+    );
+    await prisma.page.create({ data: { ...data, slug } });
+  }
+
+  revalidatePath("/", "layout");
+  for (const locale of ["uz", "ru", "en"]) {
+    revalidatePath(`/${locale}/pages/${slug}`);
+  }
+  redirect("/admin/pages?saved=1");
+}
+
+export async function deletePage(formData: FormData) {
+  await requireSession();
+  const id = String(formData.get("id") ?? "");
+  const page = await prisma.page.findUnique({ where: { id } });
+  if (!page) return;
+
+  await prisma.page.delete({ where: { id } });
+  revalidatePath("/", "layout");
+  redirect("/admin/pages?deleted=1");
+}
+
 /* -------------------------------- медиафайлы ------------------------------- */
 
 export async function deleteMedia(formData: FormData) {
