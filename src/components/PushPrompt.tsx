@@ -102,7 +102,7 @@ export function PushPrompt({ locale }: { locale: Locale }) {
   if (!visible) return null;
 
   return (
-    <div className="fixed inset-x-3 bottom-3 z-50 sm:left-auto sm:right-5 sm:bottom-5 sm:w-80">
+    <div className="fixed inset-x-3 bottom-20 z-50 sm:left-auto sm:right-5 sm:bottom-24 sm:w-80">
       <div className="rounded-xl border border-line bg-surface p-4 shadow-xl">
         {done ? (
           <p className="text-sm font-semibold text-emerald-700">{t.ok}</p>

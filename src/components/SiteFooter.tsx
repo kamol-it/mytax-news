@@ -11,7 +11,7 @@ export async function SiteFooter({ locale }: { locale: Locale }) {
     orderBy: [{ position: "asc" }, { titleRu: "asc" }],
   });
   return (
-    <footer className="mt-16 bg-ink text-white/60">
+    <footer className="bg-ink text-white/60">
       <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-10 sm:flex-row sm:items-start sm:justify-between">
         <div className="max-w-sm">
           <Logo tone="dark" size="sm" />
