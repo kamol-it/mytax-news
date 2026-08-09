@@ -1,0 +1,10 @@
+# Локальные настройки не должны попадать в сборку на Vercel:
+# иначе dotenv подставит DATABASE_URL с localhost вместо переменных проекта.
+.env
+.env.*
+dev.db
+dev.db-journal
+docker-compose.yml
+public/uploads
+.next
+node_modules
