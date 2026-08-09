@@ -22,7 +22,7 @@ export async function SiteHeader({ locale }: { locale: Locale }) {
   ]);
 
   const navLink =
-    "whitespace-nowrap rounded px-3 py-2 text-sm font-medium text-foreground/80 transition hover:bg-background hover:text-accent";
+    "whitespace-nowrap rounded px-2.5 py-2 text-[13px] font-medium text-foreground/80 transition hover:bg-background hover:text-accent lg:text-sm";
 
   return (
     <header className="sticky top-0 z-30 border-b border-line bg-surface">
@@ -65,8 +65,9 @@ export async function SiteHeader({ locale }: { locale: Locale }) {
         </div>
       </div>
 
-      <nav className="border-t border-line">
-        <div className="mx-auto flex max-w-6xl gap-1 overflow-x-auto px-3 py-1">
+      <nav className="relative border-t border-line">
+        {/* На телефоне меню прокручивается, на широких экранах переносится на вторую строку */}
+        <div className="mx-auto flex max-w-6xl gap-0.5 overflow-x-auto px-3 py-1 [scrollbar-width:none] sm:flex-wrap sm:overflow-x-visible">
           <Link href={`/${locale}/news`} className={navLink}>
             {t.nav.all}
           </Link>
@@ -84,6 +85,10 @@ export async function SiteHeader({ locale }: { locale: Locale }) {
             </Link>
           ))}
         </div>
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-surface to-transparent sm:hidden"
+        />
       </nav>
     </header>
   );
