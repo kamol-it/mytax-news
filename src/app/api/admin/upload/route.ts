@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
-import { mkdir, writeFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
-import path from "node:path";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { saveFile } from "@/lib/storage";
 
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024; // 10 МБ
 const MAX_VIDEO_BYTES = 200 * 1024 * 1024; // 200 МБ
@@ -47,16 +46,11 @@ export async function POST(request: Request) {
     );
   }
 
-  const uploadsDir = path.join(process.cwd(), "public", "uploads");
-  await mkdir(uploadsDir, { recursive: true });
-
   // Имя генерируем сами — пользовательское имя файла не участвует в пути.
   const filename = `${Date.now()}-${randomUUID().slice(0, 8)}.${meta.ext}`;
-  const buffer = Buffer.from(await file.arrayBuffer());
-  await writeFile(path.join(uploadsDir, filename), buffer);
+  const { url } = await saveFile(filename, file);
 
   const articleId = String(formData.get("articleId") ?? "").trim() || null;
-  const url = `/uploads/${filename}`;
 
   const media = await prisma.media.create({
     data: {

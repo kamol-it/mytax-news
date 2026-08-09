@@ -43,7 +43,10 @@ export function UploadField({
     }
   }
 
-  const isUploaded = Boolean(value && value.startsWith("/uploads/"));
+  // локальный путь /uploads/… или ссылка на Vercel Blob
+  const isUploaded = Boolean(
+    value && (value.startsWith("/uploads/") || value.includes("blob.vercel-storage.com")),
+  );
 
   return (
     <div>

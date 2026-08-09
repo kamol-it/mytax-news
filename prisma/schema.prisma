@@ -1,5 +1,5 @@
 // MyTax.uz — новостной портал о налогах
-// SQLite + Prisma. Мультиязычные поля: uz / ru / en.
+// PostgreSQL + Prisma. Мультиязычные поля: uz / ru / en.
 
 generator client {
   provider = "prisma-client"
@@ -7,7 +7,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
 }
 
 model User {
@@ -15,7 +15,7 @@ model User {
   email    String @unique
   name     String
   password String
-  /// "ADMIN" | "EDITOR" — SQLite в Prisma не поддерживает enum
+  /// "ADMIN" | "EDITOR"
   role      String    @default("EDITOR")
   createdAt DateTime  @default(now())
   articles  Article[]

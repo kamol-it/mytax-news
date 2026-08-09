@@ -3,17 +3,24 @@
 Новостной сайт с админ-панелью: публикация новостей на трёх языках (uz / ru / en),
 загрузка фотографий и видео, рубрики, поиск, SEO-разметка и sitemap.
 
-Стек: **Next.js 16** (App Router, Server Actions) · **Prisma 7 + SQLite** ·
+Стек: **Next.js 16** (App Router, Server Actions) · **Prisma 7 + PostgreSQL** ·
 **Tailwind CSS 4** · сессии на JWT в httpOnly-cookie (`jose` + `bcryptjs`).
+Загруженные файлы хранятся в `public/uploads` локально и в Vercel Blob на хостинге.
 
 ## Быстрый старт
 
 ```bash
 npm install
-npm run db:push    # создать схему в SQLite
-npm run db:seed    # админ + рубрики + примеры новостей
+docker compose up -d   # локальный PostgreSQL на порту 5433
+cp .env.example .env   # вписать DATABASE_URL и AUTH_SECRET
+npm run db:push        # создать схему
+npm run db:seed        # админ + рубрики + примеры новостей
 npm run dev
 ```
+
+Строка подключения для локальной базы из `docker-compose.yml`:
+`postgresql://mytax:mytax@localhost:5433/mytax?schema=public`.
+Секрет сессий: `openssl rand -hex 32`.
 
 Сайт: http://localhost:3000 (редирект на язык браузера) · Админка: http://localhost:3000/admin
 
@@ -25,9 +32,10 @@ npm run dev
 
 | Переменная | Назначение |
 | --- | --- |
-| `DATABASE_URL` | путь к файлу SQLite, например `file:./dev.db` |
+| `DATABASE_URL` | строка подключения к PostgreSQL |
 | `AUTH_SECRET` | секрет для подписи сессий, минимум 16 символов (`openssl rand -hex 32`) |
 | `NEXT_PUBLIC_SITE_URL` | публичный адрес сайта, используется в sitemap и OG-метатегах |
+| `BLOB_READ_WRITE_TOKEN` | необязательно: если задан, загрузки идут в Vercel Blob вместо `public/uploads` |
 | `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` | необязательно: логин и пароль администратора для `db:seed` |
 
 ## Что умеет админка
@@ -68,11 +76,12 @@ npm run dev
 ## Структура
 
 ```
+docker-compose.yml     локальный PostgreSQL для разработки
 prisma/schema.prisma   модели User, Category, Article, Media
 prisma/seed.ts         админ, рубрики, демо-новости
 prisma.config.ts       конфигурация Prisma 7 CLI (адрес БД, seed)
 src/proxy.ts           префикс локали + защита /admin
-src/lib/               prisma, session/auth, i18n, slug, sanitize
+src/lib/               prisma, session/auth, i18n, slug, sanitize, storage
 src/components/        шапка, подвал, карточка новости, плеер, пагинация
 src/app/[locale]/      публичные страницы
 src/app/admin/         вход и панель управления
@@ -80,15 +89,35 @@ src/app/api/admin/     загрузка файлов
 public/uploads/        загруженные фото и видео (не в git)
 ```
 
-## Развёртывание
+## Развёртывание на Vercel
+
+1. На vercel.com войти через GitHub → **Add New → Project** → импортировать репозиторий `mytax-news`.
+2. **Storage → Create Database → Postgres** и **Create → Blob**, оба подключить к проекту:
+   Vercel сам добавит `DATABASE_URL` и `BLOB_READ_WRITE_TOKEN` в переменные окружения.
+3. В **Settings → Environment Variables** добавить `AUTH_SECRET` (`openssl rand -hex 32`)
+   и `NEXT_PUBLIC_SITE_URL` с адресом деплоя.
+4. Deploy. Сборка идёт скриптом `vercel-build`, который перед `next build` применяет схему к базе.
+5. Наполнить базу администратором и рубриками:
+   ```bash
+   npx vercel link && npx vercel env pull .env.production.local
+   DATABASE_URL="$(grep '^DATABASE_URL' .env.production.local | cut -d= -f2- | tr -d '\"')" \
+     SEED_ADMIN_PASSWORD="ваш-пароль" npm run db:seed
+   ```
+
+## Развёртывание на своём сервере
 
 1. `npm ci && npm run build`, запуск — `npm start` (порт задаётся `PORT`).
-2. Задать в окружении `DATABASE_URL`, `AUTH_SECRET`, `NEXT_PUBLIC_SITE_URL`, применить схему: `npm run db:push`.
-3. Каталог `public/uploads` и файл БД должны лежать на постоянном диске и попадать в бэкап —
-   на платформах с эфемерной файловой системой (Vercel и подобных) загруженные файлы будут теряться,
-   для них нужно вынести хранилище в S3-совместимый сервис, а SQLite заменить на PostgreSQL.
+2. Задать `DATABASE_URL`, `AUTH_SECRET`, `NEXT_PUBLIC_SITE_URL`, применить схему: `npm run db:push`.
+3. Без `BLOB_READ_WRITE_TOKEN` файлы пишутся в `public/uploads` — каталог должен лежать
+   на постоянном диске и попадать в бэкап вместе с базой.
 4. Настроить HTTPS на реверс-прокси: cookie сессии выставляется с флагом `Secure` в production.
-5. Ограничить на прокси размер тела запроса не ниже 200 МБ, иначе не пройдёт загрузка видео.
+5. Поднять на прокси лимит размера тела запроса минимум до 200 МБ, иначе не пройдёт загрузка видео.
+
+## Про GitHub Pages
+
+Pages раздаёт только статические файлы, поэтому админ-панель там работать не может:
+вход, сохранение новостей и загрузка медиа — это серверный код и запись в базу.
+Для показа заказчику нужен хостинг с Node (Vercel выше или свой сервер).
 
 ## Полезные команды
 

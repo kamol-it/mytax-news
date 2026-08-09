@@ -2,10 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { unlink } from "node:fs/promises";
-import path from "node:path";
 import { clearSessionCookie, getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { removeFile } from "@/lib/storage";
 import { sanitizeHtml } from "@/lib/sanitize";
 import { slugify, uniqueSlug } from "@/lib/slug";
 
@@ -193,13 +192,7 @@ export async function deleteMedia(formData: FormData) {
   if (!media) return;
 
   await prisma.media.delete({ where: { id } });
-
-  // Файл лежит в public/uploads; имя из БД, но всё равно нормализуем путь.
-  const uploadsDir = path.join(process.cwd(), "public", "uploads");
-  const filePath = path.join(uploadsDir, path.basename(media.url));
-  if (filePath.startsWith(uploadsDir)) {
-    await unlink(filePath).catch(() => undefined);
-  }
+  await removeFile(media.url);
 
   revalidatePath("/admin/media");
 }

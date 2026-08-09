@@ -1,0 +1,24 @@
+# Локальная база для разработки: docker compose up -d
+# Строка подключения для .env:
+# DATABASE_URL="postgresql://mytax:mytax@localhost:5433/mytax?schema=public"
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: mytax-pg
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: mytax
+      POSTGRES_PASSWORD: mytax
+      POSTGRES_DB: mytax
+    ports:
+      - "5433:5432"
+    volumes:
+      - mytax-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mytax"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  mytax-pgdata:
