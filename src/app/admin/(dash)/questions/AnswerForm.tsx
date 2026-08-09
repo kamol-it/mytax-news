@@ -10,23 +10,29 @@ export function AnswerForm({ questionId }: { questionId: string }) {
   );
 
   return (
-    <form action={action} className="mt-3 space-y-2">
+    <form action={action} key={questionId}>
       <input type="hidden" name="id" value={questionId} />
-      <textarea
-        name="body"
-        rows={3}
-        placeholder="Ответ консультанта…"
-        className="w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-base focus:border-accent focus:outline-none"
-      />
-      {state.error ? <p className="text-sm text-accent">{state.error}</p> : null}
-      {state.ok ? <p className="text-sm text-emerald-700">{state.ok}</p> : null}
-      <button
-        type="submit"
-        disabled={pending}
-        className="rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-white hover:bg-accent-hover disabled:opacity-60"
-      >
-        {pending ? "Отправляем…" : "Ответить"}
-      </button>
+      <div className="flex items-end gap-2">
+        <textarea
+          name="body"
+          rows={2}
+          placeholder="Ответ консультанта…"
+          className="min-h-11 flex-1 resize-none rounded-lg border border-line bg-surface px-3 py-2 text-base focus:border-accent focus:outline-none"
+        />
+        <button
+          type="submit"
+          disabled={pending}
+          aria-label="Ответить"
+          title="Ответить"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-accent text-white disabled:opacity-60"
+        >
+          <svg viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5">
+            <path d="M3 20.5 21 12 3 3.5 3 10l12 2-12 2z" />
+          </svg>
+        </button>
+      </div>
+      {state.error ? <p className="mt-1 text-xs text-accent">{state.error}</p> : null}
+      {state.ok ? <p className="mt-1 text-xs text-emerald-700">{state.ok}</p> : null}
     </form>
   );
 }
