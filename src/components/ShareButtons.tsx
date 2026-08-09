@@ -14,6 +14,14 @@ const icons = {
     "M18 16.1c-.8 0-1.5.3-2 .8l-7.1-4.2c0-.2.1-.4.1-.7s0-.5-.1-.7L16 7.1c.5.5 1.2.8 2 .8a2.9 2.9 0 1 0-2.9-2.9c0 .3 0 .5.1.7L8.1 9.9a2.9 2.9 0 1 0 0 4.2l7.1 4.2c0 .2-.1.4-.1.6a2.9 2.9 0 1 0 2.9-2.8Z",
 };
 
+function Icon({ d }: { d: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className="h-[18px] w-[18px]" aria-hidden="true">
+      <path d={d} />
+    </svg>
+  );
+}
+
 /** Кнопки «поделиться» иконками. На телефоне первая кнопка открывает системное меню. */
 export function ShareButtons({ title }: { title: string }) {
   const [copied, setCopied] = useState(false);
@@ -46,12 +54,6 @@ export function ShareButtons({ title }: { title: string }) {
     }
     await copy();
   }
-
-  const Icon = ({ d }: { d: string }) => (
-    <svg viewBox="0 0 24 24" fill="currentColor" className="h-[18px] w-[18px]" aria-hidden="true">
-      <path d={d} />
-    </svg>
-  );
 
   return (
     <div className="mt-8 flex flex-wrap items-center gap-2 border-t border-line pt-5">
