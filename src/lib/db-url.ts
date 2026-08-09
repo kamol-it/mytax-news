@@ -10,12 +10,21 @@ const CANDIDATES = [
   "POSTGRES_URL_NON_POOLING",
 ] as const;
 
-export function databaseUrl(): string {
+/** Строка подключения или undefined. Годится там, где база может быть не нужна. */
+export function findDatabaseUrl(): string | undefined {
   for (const name of CANDIDATES) {
     const value = process.env[name];
     if (value && value.trim() !== "") return value;
   }
-  throw new Error(
-    `Не задана строка подключения к базе. Ожидается одна из переменных: ${CANDIDATES.join(", ")}`,
-  );
+  return undefined;
+}
+
+export function databaseUrl(): string {
+  const url = findDatabaseUrl();
+  if (!url) {
+    throw new Error(
+      `Не задана строка подключения к базе. Ожидается одна из переменных: ${CANDIDATES.join(", ")}`,
+    );
+  }
+  return url;
 }
