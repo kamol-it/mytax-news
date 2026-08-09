@@ -241,6 +241,7 @@ export async function savePage(
     bodyRu: sanitizeHtml(text("bodyRu")),
     bodyEn: sanitizeHtml(text("bodyEn")),
     published: formData.get("published") === "on",
+    inHeader: formData.get("inHeader") === "on",
     position: Number(text("position")) || 0,
   };
 

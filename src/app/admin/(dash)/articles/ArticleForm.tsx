@@ -1,9 +1,10 @@
 "use client";
 
-import { useActionState, useRef, useState } from "react";
+import { useActionState, useState } from "react";
 import Link from "next/link";
 import { saveArticle, type ArticleFormState } from "../../actions";
 import { UploadField } from "./UploadField";
+import { RichTextEditor } from "@/components/admin/RichTextEditor";
 import { locales, localeNames, type Locale } from "@/lib/i18n";
 
 export type ArticleFormValues = {
@@ -49,36 +50,12 @@ export function ArticleForm({
     height: values.coverHeight ?? 0,
   });
   const [video, setVideo] = useState(values.videoUrl ?? "");
-  const bodyRefs = useRef<Record<string, HTMLTextAreaElement | null>>({});
-
-  /** Вставляет HTML в текстовое поле активной вкладки на позицию курсора. */
-  function insertIntoBody(html: string) {
-    const el = bodyRefs.current[tab];
-    if (!el) return;
-    const start = el.selectionStart ?? el.value.length;
-    el.value = `${el.value.slice(0, start)}${html}${el.value.slice(el.selectionEnd ?? start)}`;
-    el.focus();
-    el.selectionStart = el.selectionEnd = start + html.length;
-  }
-
-  function wrapSelection(before: string, after: string) {
-    const el = bodyRefs.current[tab];
-    if (!el) return;
-    const start = el.selectionStart ?? 0;
-    const end = el.selectionEnd ?? 0;
-    const selected = el.value.slice(start, end);
-    el.value = `${el.value.slice(0, start)}${before}${selected}${after}${el.value.slice(end)}`;
-    el.focus();
-    el.selectionStart = start + before.length;
-    el.selectionEnd = start + before.length + selected.length;
-  }
-
   return (
     <form action={formAction} className="space-y-6">
       {values.id ? <input type="hidden" name="id" value={values.id} /> : null}
 
       <div className="flex flex-wrap items-center gap-3">
-        <h1 className="text-2xl font-black">
+        <h1 className="text-xl font-black sm:text-2xl">
           {values.id ? "Редактирование новости" : "Новая новость"}
         </h1>
         <Link href="/admin/articles" className="text-sm text-muted hover:text-accent">
@@ -87,7 +64,7 @@ export function ArticleForm({
         <button
           type="submit"
           disabled={pending}
-          className="ml-auto rounded-lg bg-accent px-5 py-2 text-sm font-semibold text-white hover:bg-accent-hover disabled:opacity-60"
+          className="ml-auto hidden rounded-lg bg-accent px-5 py-2 text-sm font-semibold text-white hover:bg-accent-hover disabled:opacity-60 sm:block"
         >
           {pending ? "Сохраняем…" : "Сохранить"}
         </button>
@@ -141,51 +118,13 @@ export function ArticleForm({
                 </label>
 
                 <div>
-                  <div className="mb-1 flex flex-wrap items-center gap-1">
-                    <span className="mr-2 text-sm font-medium">Текст ({l})</span>
-                    {[
-                      { label: "P", before: "<p>", after: "</p>" },
-                      { label: "H2", before: "<h2>", after: "</h2>" },
-                      { label: "B", before: "<strong>", after: "</strong>" },
-                      { label: "I", before: "<em>", after: "</em>" },
-                      { label: "Список", before: "<ul>\n  <li>", after: "</li>\n</ul>" },
-                      { label: "Цитата", before: "<blockquote>", after: "</blockquote>" },
-                    ].map((btn) => (
-                      <button
-                        key={btn.label}
-                        type="button"
-                        onClick={() => wrapSelection(btn.before, btn.after)}
-                        className="rounded border border-line bg-surface px-2 py-0.5 text-xs hover:border-accent hover:text-accent"
-                      >
-                        {btn.label}
-                      </button>
-                    ))}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const url = window.prompt("Ссылка (URL):", "https://");
-                        if (url) wrapSelection(`<a href="${url}" rel="noopener">`, "</a>");
-                      }}
-                      className="rounded border border-line bg-surface px-2 py-0.5 text-xs hover:border-accent hover:text-accent"
-                    >
-                      Ссылка
-                    </button>
-                  </div>
-
-                  <textarea
+                  <span className="mb-1 block text-sm font-medium">Текст ({l})</span>
+                  <RichTextEditor
                     name={`body${s}`}
-                    rows={16}
-                    ref={(el) => {
-                      bodyRefs.current[l] = el;
-                    }}
-                    defaultValue={values[`body${s}` as keyof ArticleFormValues] as string ?? ""}
-                    className="w-full rounded-lg border border-line bg-surface px-3 py-2 font-mono text-sm leading-relaxed focus:border-accent focus:outline-none"
-                    placeholder="<p>Текст новости…</p>"
+                    defaultValue={(values[`body${s}` as keyof ArticleFormValues] as string) ?? ""}
+                    articleId={values.id}
+                    placeholder="Текст новости…"
                   />
-                  <p className="mt-1 text-xs text-muted">
-                    Поддерживается HTML. Фото из блока «Медиа» вставляются в текст кнопкой
-                    «В текст».
-                  </p>
                 </div>
               </div>
             );
@@ -307,26 +246,18 @@ export function ArticleForm({
             </label>
           </div>
 
-          <div className="rounded-xl border border-line bg-surface p-4">
-            <h2 className="mb-3 text-sm font-bold uppercase tracking-widest text-muted">
-              Фото в текст
-            </h2>
-            <UploadField
-              accept="image/*"
-              kind="image"
-              articleId={values.id}
-              buttonLabel="Загрузить и вставить"
-              onUploaded={(url) =>
-                insertIntoBody(
-                  `\n<figure><img src="${url}" alt="" /><figcaption></figcaption></figure>\n`,
-                )
-              }
-            />
-            <p className="mt-2 text-xs text-muted">
-              Вставится в текст активной языковой вкладки.
-            </p>
-          </div>
         </aside>
+      </div>
+
+      {/* На телефоне кнопка сохранения всегда под рукой */}
+      <div className="sticky bottom-0 -mx-4 border-t border-line bg-surface/95 px-4 py-3 backdrop-blur sm:hidden">
+        <button
+          type="submit"
+          disabled={pending}
+          className="w-full rounded-lg bg-accent px-5 py-3 font-semibold text-white disabled:opacity-60"
+        >
+          {pending ? "Сохраняем…" : "Сохранить"}
+        </button>
       </div>
     </form>
   );

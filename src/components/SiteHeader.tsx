@@ -16,7 +16,7 @@ export async function SiteHeader({ locale }: { locale: Locale }) {
   const [categories, pages] = await Promise.all([
     prisma.category.findMany({ orderBy: [{ position: "asc" }, { nameRu: "asc" }] }),
     prisma.page.findMany({
-      where: { published: true },
+      where: { published: true, inHeader: true },
       orderBy: [{ position: "asc" }, { titleRu: "asc" }],
     }),
   ]);
