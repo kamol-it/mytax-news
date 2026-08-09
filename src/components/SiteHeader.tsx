@@ -2,7 +2,6 @@ import Link from "next/link";
 import { Logo } from "@/components/Logo";
 import { LocaleSwitcher } from "@/components/LocaleSwitcher";
 import { SocialLinks } from "@/components/SocialLinks";
-import { AskCtaButton } from "@/components/AskCta";
 import { getDictionary, pickLocalized, type Locale } from "@/lib/i18n";
 import { prisma } from "@/lib/prisma";
 
@@ -55,7 +54,6 @@ export async function SiteHeader({ locale }: { locale: Locale }) {
             </svg>
           </Link>
 
-          <AskCtaButton locale={locale} />
           <SocialLinks className="hidden lg:flex" size="sm" tone="light" />
           <LocaleSwitcher locale={locale} />
         </div>

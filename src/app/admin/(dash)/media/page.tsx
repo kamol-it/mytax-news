@@ -1,6 +1,7 @@
 import { ConfirmSubmit } from "@/components/ConfirmSubmit";
 import { formatDate } from "@/lib/i18n";
 import { prisma } from "@/lib/prisma";
+import { AdminPager, pageFromParam } from "@/components/admin/AdminPager";
 import { deleteMedia } from "../../actions";
 
 export const metadata = { title: "Медиафайлы" };
@@ -11,11 +12,23 @@ function humanSize(bytes: number): string {
   return `${(bytes / 1024 / 1024).toFixed(1)} МБ`;
 }
 
-export default async function MediaPage() {
-  const media = await prisma.media.findMany({
-    orderBy: { createdAt: "desc" },
-    take: 200,
-  });
+const PER_PAGE = 24;
+
+export default async function MediaPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
+  const page = pageFromParam((await searchParams).page);
+
+  const [total, media] = await Promise.all([
+    prisma.media.count(),
+    prisma.media.findMany({
+      orderBy: { createdAt: "desc" },
+      skip: (page - 1) * PER_PAGE,
+      take: PER_PAGE,
+    }),
+  ]);
 
   return (
     <div>
@@ -61,6 +74,8 @@ export default async function MediaPage() {
           ))}
         </div>
       )}
+
+      <AdminPager page={page} total={total} perPage={PER_PAGE} basePath="/admin/media" />
     </div>
   );
 }

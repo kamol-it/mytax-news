@@ -9,26 +9,49 @@ import {
   toggleQuestionAnswered,
   toggleQuestionClosed,
 } from "../../actions";
+import { AdminPager, pageFromParam } from "@/components/admin/AdminPager";
 import { AnswerForm } from "./AnswerForm";
 import { AdminPushButton } from "./AdminPushButton";
 
 export const metadata = { title: "Вопросы консультанту" };
 export const dynamic = "force-dynamic";
 
-export default async function QuestionsPage() {
-  const questions = await prisma.question.findMany({
-    orderBy: [{ answered: "asc" }, { lastMessageAt: "desc" }],
-    take: 100,
-    include: { messages: { orderBy: { createdAt: "asc" } } },
-  });
+const PER_PAGE = 20;
 
-  const open = questions.filter((q) => !q.answered && !q.closed).length;
+export default async function QuestionsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string; filter?: string }>;
+}) {
+  const params = await searchParams;
+  const page = pageFromParam(params.page);
+  const onlyOpen = params.filter === "open";
+  const where = onlyOpen ? { answered: false, closed: false } : {};
+
+  const [total, open, questions] = await Promise.all([
+    prisma.question.count({ where }),
+    prisma.question.count({ where: { answered: false, closed: false } }),
+    prisma.question.findMany({
+      where,
+      orderBy: [{ answered: "asc" }, { lastMessageAt: "desc" }],
+      skip: (page - 1) * PER_PAGE,
+      take: PER_PAGE,
+      include: { messages: { orderBy: { createdAt: "asc" } } },
+    }),
+  ]);
 
   return (
     <div>
       <div className="mb-5 flex flex-wrap items-center gap-3">
         <h1 className="text-xl font-black sm:text-2xl">Вопросы консультанту</h1>
-        <span className="text-sm text-muted">без ответа: {open}</span>
+        <Link
+          href={onlyOpen ? "/admin/questions" : "/admin/questions?filter=open"}
+          className={`rounded-full px-3 py-1 text-xs font-semibold ${
+            onlyOpen ? "bg-accent text-white" : "bg-background text-muted hover:text-accent"
+          }`}
+        >
+          без ответа: {open}
+        </Link>
         <div className="w-full sm:ml-auto sm:w-auto">
           <AdminPushButton />
         </div>
@@ -158,6 +181,14 @@ export default async function QuestionsPage() {
           })
         )}
       </div>
+
+      <AdminPager
+        page={page}
+        total={total}
+        perPage={PER_PAGE}
+        basePath="/admin/questions"
+        query={onlyOpen ? { filter: "open" } : {}}
+      />
     </div>
   );
 }

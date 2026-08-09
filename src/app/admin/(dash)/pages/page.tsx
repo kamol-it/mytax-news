@@ -2,14 +2,28 @@ import Link from "next/link";
 import { ConfirmSubmit } from "@/components/ConfirmSubmit";
 import { formatDate } from "@/lib/i18n";
 import { prisma } from "@/lib/prisma";
+import { AdminPager, pageFromParam } from "@/components/admin/AdminPager";
 import { deletePage } from "../../actions";
 
 export const metadata = { title: "Страницы" };
 
-export default async function PagesListPage() {
-  const pages = await prisma.page.findMany({
-    orderBy: [{ position: "asc" }, { titleRu: "asc" }],
-  });
+const PER_PAGE = 20;
+
+export default async function PagesListPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
+  const page = pageFromParam((await searchParams).page);
+
+  const [total, pages] = await Promise.all([
+    prisma.page.count(),
+    prisma.page.findMany({
+      orderBy: [{ position: "asc" }, { titleRu: "asc" }],
+      skip: (page - 1) * PER_PAGE,
+      take: PER_PAGE,
+    }),
+  ]);
 
   return (
     <div>
@@ -75,6 +89,8 @@ export default async function PagesListPage() {
           ))
         )}
       </div>
+
+      <AdminPager page={page} total={total} perPage={PER_PAGE} basePath="/admin/pages" />
     </div>
   );
 }

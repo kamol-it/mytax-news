@@ -4,6 +4,7 @@ import { getSession } from "@/lib/auth";
 import { formatDate } from "@/lib/i18n";
 import { prisma } from "@/lib/prisma";
 import { deleteUser } from "../../actions";
+import { AdminPager, pageFromParam } from "@/components/admin/AdminPager";
 import {
   ChangeOwnPasswordForm,
   CreateUserForm,
@@ -12,7 +13,13 @@ import {
 
 export const metadata = { title: "Пользователи" };
 
-export default async function UsersPage() {
+const PER_PAGE = 20;
+
+export default async function UsersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
   const session = await getSession();
   if (!session) redirect("/admin/login");
 
@@ -29,11 +36,18 @@ export default async function UsersPage() {
     );
   }
 
-  const users = await prisma.user.findMany({
-    orderBy: [{ role: "asc" }, { createdAt: "asc" }],
-    include: { _count: { select: { articles: true } } },
-  });
-  const admins = users.filter((u) => u.role === "ADMIN").length;
+  const page = pageFromParam((await searchParams).page);
+
+  const [total, admins, users] = await Promise.all([
+    prisma.user.count(),
+    prisma.user.count({ where: { role: "ADMIN" } }),
+    prisma.user.findMany({
+      orderBy: [{ role: "asc" }, { createdAt: "asc" }],
+      skip: (page - 1) * PER_PAGE,
+      take: PER_PAGE,
+      include: { _count: { select: { articles: true } } },
+    }),
+  ]);
 
   return (
     <div className="space-y-8">
@@ -91,6 +105,8 @@ export default async function UsersPage() {
           );
         })}
       </div>
+
+      <AdminPager page={page} total={total} perPage={PER_PAGE} basePath="/admin/users" />
 
       <div className="max-w-lg">
         <ChangeOwnPasswordForm />

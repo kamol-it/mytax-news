@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ConfirmSubmit } from "@/components/ConfirmSubmit";
+import { AdminPager, pageFromParam } from "@/components/admin/AdminPager";
 import { formatDate } from "@/lib/i18n";
 import { prisma } from "@/lib/prisma";
 import { deleteArticle, toggleArticlePublished } from "../../actions";
@@ -13,7 +14,7 @@ export default async function ArticlesPage({
   searchParams: Promise<{ page?: string; q?: string; status?: string }>;
 }) {
   const { page: pageParam, q, status } = await searchParams;
-  const page = Math.max(1, Number(pageParam ?? 1) || 1);
+  const page = pageFromParam(pageParam);
   const query = (q ?? "").trim();
 
   const where = {
@@ -40,8 +41,6 @@ export default async function ArticlesPage({
       include: { category: true, author: true },
     }),
   ]);
-
-  const totalPages = Math.max(1, Math.ceil(total / PER_PAGE));
 
   return (
     <div>
@@ -156,29 +155,16 @@ export default async function ArticlesPage({
         )}
       </div>
 
-      {totalPages > 1 ? (
-        <div className="mt-5 flex items-center justify-center gap-2 text-sm">
-          {page > 1 ? (
-            <Link
-              href={`/admin/articles?page=${page - 1}`}
-              className="rounded-lg border border-line bg-surface px-3 py-2"
-            >
-              ← Назад
-            </Link>
-          ) : null}
-          <span className="text-muted">
-            {page} / {totalPages}
-          </span>
-          {page < totalPages ? (
-            <Link
-              href={`/admin/articles?page=${page + 1}`}
-              className="rounded-lg border border-line bg-surface px-3 py-2"
-            >
-              Вперёд →
-            </Link>
-          ) : null}
-        </div>
-      ) : null}
+      <AdminPager
+        page={page}
+        total={total}
+        perPage={PER_PAGE}
+        basePath="/admin/articles"
+        query={{
+          ...(query ? { q: query } : {}),
+          ...(status ? { status } : {}),
+        }}
+      />
     </div>
   );
 }
