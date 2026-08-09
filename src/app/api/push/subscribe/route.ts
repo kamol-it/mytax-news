@@ -1,9 +1,15 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { clientIp, rateLimit } from "@/lib/rate-limit";
 
 /** Браузер присылает свою подписку после разрешения уведомлений. */
 export async function POST(request: Request) {
+  const limit = await rateLimit(`push-sub:${clientIp(request)}`, 10, 600);
+  if (!limit.allowed) {
+    return NextResponse.json({ error: "Слишком часто" }, { status: 429 });
+  }
+
   const data = (await request.json().catch(() => null)) as
     | {
         endpoint?: string;

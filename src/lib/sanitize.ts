@@ -1,29 +1,51 @@
+import sanitize from "sanitize-html";
+
 /**
- * Минимальная очистка HTML из редактора админки.
- * Админ — доверенный автор, но убираем то, что может выполнить код,
- * чтобы скомпрометированная учётка не превращалась в XSS на всём сайте.
+ * Очистка HTML из редактора админки по белому списку.
+ *
+ * Раньше здесь были регулярные выражения, и они пропускали, например,
+ * `<a href=javascript:alert(1)>` без кавычек и `javas&#99;ript:` в виде
+ * HTML-сущности. Теперь HTML разбирается парсером: всё, чего нет в списке,
+ * удаляется, а схемы ссылок проверяются после декодирования сущностей.
  */
-const BLOCKED_TAGS = ["script", "style", "iframe", "object", "embed", "form", "link", "meta"];
-
 export function sanitizeHtml(input: string): string {
-  let html = input;
+  if (!input) return "";
 
-  for (const tag of BLOCKED_TAGS) {
-    html = html.replace(
-      new RegExp(`<${tag}\\b[^>]*>[\\s\\S]*?</${tag}>`, "gi"),
-      "",
-    );
-    html = html.replace(new RegExp(`<${tag}\\b[^>]*/?>`, "gi"), "");
-  }
-
-  // on*-атрибуты: onclick="…", onerror='…', onload=…
-  html = html.replace(/\son[a-z]+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, "");
-
-  // javascript:-ссылки
-  html = html.replace(
-    /(href|src)\s*=\s*("|')\s*javascript:[^"']*\2/gi,
-    '$1="#"',
-  );
-
-  return html.trim();
+  return sanitize(input, {
+    allowedTags: [
+      "p", "br", "hr",
+      "h2", "h3", "h4",
+      "strong", "b", "em", "i", "u", "s", "sub", "sup", "mark",
+      "ul", "ol", "li",
+      "blockquote", "pre", "code",
+      "a", "img", "figure", "figcaption",
+      "table", "thead", "tbody", "tfoot", "tr", "th", "td", "caption",
+      "span", "div",
+    ],
+    allowedAttributes: {
+      a: ["href", "title", "target", "rel"],
+      img: ["src", "alt", "title", "width", "height", "loading"],
+      th: ["colspan", "rowspan", "scope"],
+      td: ["colspan", "rowspan"],
+      "*": ["class"],
+    },
+    // Только безопасные схемы: javascript:, data: и vbscript: не пройдут
+    allowedSchemes: ["http", "https", "mailto", "tel"],
+    allowedSchemesByTag: { img: ["http", "https"] },
+    allowProtocolRelative: false,
+    // style не разрешаем вовсе: через него уходят url(javascript:…) и подобное
+    allowedStyles: {},
+    transformTags: {
+      // Внешние ссылки не должны получать доступ к окну сайта
+      a: (tagName, attribs) => ({
+        tagName,
+        attribs: {
+          ...attribs,
+          ...(attribs.target === "_blank"
+            ? { rel: "noopener noreferrer" }
+            : { rel: attribs.rel ?? "noopener" }),
+        },
+      }),
+    },
+  }).trim();
 }

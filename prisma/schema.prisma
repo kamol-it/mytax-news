@@ -124,6 +124,16 @@ model QuestionMessage {
   @@index([questionId, createdAt])
 }
 
+/// Счётчики частоты запросов: защита формы вопросов и входа в админку.
+/// Хранятся в базе, потому что serverless-инстансы не делят память.
+model RateLimit {
+  key       String   @id
+  count     Int      @default(0)
+  expiresAt DateTime
+
+  @@index([expiresAt])
+}
+
 /// Настройки сайта в виде ключ-значение: ссылки на соцсети и подобное.
 model Setting {
   key       String   @id

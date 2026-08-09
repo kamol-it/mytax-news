@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { threadMessages } from "@/lib/questions";
 import { sendPushToAdmins } from "@/lib/push";
+import { clientIp, rateLimit } from "@/lib/rate-limit";
 
 const MAX_BODY = 4000;
 
@@ -13,6 +14,8 @@ async function loadThread(token: string) {
 }
 
 function serialize(question: NonNullable<Awaited<ReturnType<typeof loadThread>>>) {
+  // Контакт посетителя наружу не отдаём: виджету он не нужен,
+  // а ссылка с кодом ветки может попасть в чужие руки
   return {
     token: question.token,
     name: question.name,
@@ -46,6 +49,15 @@ export async function POST(
   { params }: { params: Promise<{ token: string }> },
 ) {
   const { token } = await params;
+
+  const limit = await rateLimit(`ask-msg:${clientIp(request)}`, 30, 600);
+  if (!limit.allowed) {
+    return NextResponse.json(
+      { error: "Слишком часто. Подождите немного." },
+      { status: 429, headers: { "retry-after": String(limit.retryAfter) } },
+    );
+  }
+
   const data = (await request.json().catch(() => null)) as { body?: string } | null;
   const body = (data?.body ?? "").trim().slice(0, MAX_BODY);
 

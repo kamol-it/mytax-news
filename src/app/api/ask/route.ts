@@ -2,11 +2,20 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { newToken } from "@/lib/questions";
 import { sendPushToAdmins } from "@/lib/push";
+import { clientIp, rateLimit } from "@/lib/rate-limit";
 
 const MAX_BODY = 4000;
 
 /** Создание обращения из чат-виджета. */
 export async function POST(request: Request) {
+  const limit = await rateLimit(`ask:${clientIp(request)}`, 5, 3600);
+  if (!limit.allowed) {
+    return NextResponse.json(
+      { error: "Слишком много обращений. Попробуйте позже." },
+      { status: 429, headers: { "retry-after": String(limit.retryAfter) } },
+    );
+  }
+
   const data = (await request.json().catch(() => null)) as {
     name?: string;
     contact?: string;

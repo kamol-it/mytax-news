@@ -50,6 +50,11 @@ export function UploadField({
       }
 
       const res = await fetch("/api/admin/upload", { method: "POST", body });
+      if (res.status === 413) {
+        throw new Error(
+          "Хостинг не принял файл: слишком большой. Уменьшите размер или загрузите видео ссылкой на YouTube.",
+        );
+      }
       const data = (await res.json()) as {
         url?: string;
         error?: string;

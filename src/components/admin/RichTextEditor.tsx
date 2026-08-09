@@ -67,6 +67,11 @@ export function RichTextEditor({
       }
 
       const res = await fetch("/api/admin/upload", { method: "POST", body });
+      if (res.status === 413) {
+        throw new Error(
+          "Хостинг не принял файл: слишком большой. Уменьшите размер или загрузите видео ссылкой на YouTube.",
+        );
+      }
       const data = (await res.json()) as { url?: string; error?: string };
       if (!res.ok || !data.url) throw new Error(data.error ?? "Ошибка загрузки");
       editor.chain().focus().setImage({ src: data.url, alt: "" }).run();
