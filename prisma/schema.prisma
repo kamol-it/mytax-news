@@ -75,18 +75,53 @@ model Article {
   @@index([categoryId])
 }
 
-/// Вопросы посетителей из формы «Спроси консультанта».
+/// Обращение из «Спроси консультанта»: ветка с историей сообщений.
 model Question {
-  id        String   @id @default(cuid())
-  name      String
-  contact   String
-  topic     String   @default("")
-  body      String
-  locale    String   @default("ru")
-  answered  Boolean  @default(false)
-  createdAt DateTime @default(now())
+  id String @id @default(cuid())
+  /// Секретный код в ссылке — по нему посетитель открывает свою ветку без регистрации.
+  /// Nullable: у вопросов, созданных до появления веток, кода ещё нет.
+  token String? @unique
 
-  @@index([answered, createdAt])
+  name    String
+  contact String
+  topic   String @default("")
+  locale  String @default("ru")
+
+  /// Текст первого вопроса из старой формы. Новые обращения пишут в QuestionMessage;
+  /// поле оставлено, чтобы не потерять уже присланные вопросы.
+  body String @default("")
+
+  answered      Boolean  @default(false)
+  closed        Boolean  @default(false)
+  lastMessageAt DateTime @default(now())
+  createdAt     DateTime @default(now())
+
+  /// Публикация в разделе «Вопрос-ответ»: имя и контакт не показываются
+  published   Boolean   @default(false)
+  publicSlug  String?   @unique
+  publicTitle String    @default("")
+  publishedAt DateTime?
+
+  messages QuestionMessage[]
+
+  @@index([answered, lastMessageAt])
+  @@index([published, publishedAt])
+}
+
+/// Сообщение в ветке: от посетителя или от консультанта.
+model QuestionMessage {
+  id     String @id @default(cuid())
+  /// "visitor" | "consultant"
+  author String
+  body   String
+
+  authorName String   @default("")
+  createdAt  DateTime @default(now())
+
+  questionId String
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([questionId, createdAt])
 }
 
 /// Настройки сайта в виде ключ-значение: ссылки на соцсети и подобное.
@@ -103,7 +138,11 @@ model PushSubscription {
   p256dh    String
   auth      String
   locale    String   @default("uz")
-  userAgent String   @default("")
+  /// Подписка сотрудника: на неё уходят уведомления о новых вопросах
+  admin Boolean @default(false)
+  /// Подписка посетителя на ответ в конкретной ветке
+  questionToken String   @default("")
+  userAgent     String   @default("")
   createdAt DateTime @default(now())
 }
 

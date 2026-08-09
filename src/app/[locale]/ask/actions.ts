@@ -1,12 +1,15 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
+import { newToken } from "@/lib/questions";
+import { sendPushToAdmins, sendPushToQuestion } from "@/lib/push";
 
-export type AskState = { error?: string; ok?: boolean };
+export type AskState = { error?: string; token?: string };
 
 const MAX_BODY = 4000;
 
-/** Приём вопроса от посетителя. Ответ уходит на указанный контакт вручную. */
+/** Первое обращение: создаёт ветку и возвращает её код. */
 export async function submitQuestion(
   _prev: AskState,
   formData: FormData,
@@ -26,15 +29,99 @@ export async function submitQuestion(
     return { error: "Опишите вопрос подробнее — минимум 15 символов." };
   }
 
-  // Простая защита от повторной отправки одного и того же вопроса
-  const recent = await prisma.question.findFirst({
-    where: { contact, body, createdAt: { gt: new Date(Date.now() - 10 * 60 * 1000) } },
-  });
-  if (recent) return { ok: true };
-
+  const token = newToken();
   await prisma.question.create({
-    data: { name, contact, topic, body, locale },
+    data: {
+      token,
+      name,
+      contact,
+      topic,
+      locale,
+      lastMessageAt: new Date(),
+      messages: { create: { author: "visitor", body, authorName: name } },
+    },
   });
 
-  return { ok: true };
+  await sendPushToAdmins({
+    title: "Новый вопрос консультанту",
+    body: `${name}: ${body.slice(0, 120)}`,
+    url: `${process.env.NEXT_PUBLIC_SITE_URL ?? ""}/admin/questions`,
+    tag: "mytax-question",
+  });
+
+  revalidatePath("/admin/questions");
+  revalidatePath("/admin");
+  return { token };
+}
+
+/** Сообщение посетителя в уже открытой ветке. */
+export async function replyAsVisitor(
+  _prev: AskState,
+  formData: FormData,
+): Promise<AskState> {
+  const token = String(formData.get("token") ?? "").trim();
+  const body = String(formData.get("body") ?? "").trim().slice(0, MAX_BODY);
+
+  if (!token) return { error: "Ветка не найдена." };
+  if (body.length < 2) return { error: "Напишите сообщение." };
+
+  const question = await prisma.question.findUnique({ where: { token } });
+  if (!question) return { error: "Ветка не найдена." };
+  if (question.closed) return { error: "Обращение закрыто." };
+
+  await prisma.$transaction([
+    prisma.questionMessage.create({
+      data: {
+        questionId: question.id,
+        author: "visitor",
+        body,
+        authorName: question.name,
+      },
+    }),
+    prisma.question.update({
+      where: { id: question.id },
+      data: { answered: false, lastMessageAt: new Date() },
+    }),
+  ]);
+
+  await sendPushToAdmins({
+    title: "Ответ посетителя в обращении",
+    body: `${question.name}: ${body.slice(0, 120)}`,
+    url: `${process.env.NEXT_PUBLIC_SITE_URL ?? ""}/admin/questions`,
+    tag: "mytax-question",
+  });
+
+  revalidatePath(`/${question.locale}/ask/${token}`);
+  revalidatePath("/admin/questions");
+  return { token };
+}
+
+/** Ответ консультанта из админки. */
+export async function replyAsConsultant(
+  questionId: string,
+  authorName: string,
+  body: string,
+): Promise<void> {
+  const question = await prisma.question.findUnique({ where: { id: questionId } });
+  if (!question) return;
+
+  await prisma.$transaction([
+    prisma.questionMessage.create({
+      data: { questionId, author: "consultant", body, authorName },
+    }),
+    prisma.question.update({
+      where: { id: questionId },
+      data: { answered: true, lastMessageAt: new Date() },
+    }),
+  ]);
+
+  if (question.token) {
+    await sendPushToQuestion(question.token, {
+      title: "MYTAX: есть ответ на ваш вопрос",
+      body: body.slice(0, 140),
+      url: `${process.env.NEXT_PUBLIC_SITE_URL ?? ""}/${question.locale}/ask/${question.token}`,
+      tag: `mytax-answer-${question.token}`,
+    });
+    revalidatePath(`/${question.locale}/ask/${question.token}`);
+  }
 }

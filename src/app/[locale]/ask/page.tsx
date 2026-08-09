@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { isLocale, type Locale } from "@/lib/i18n";
+import Link from "next/link";
 import { AskForm } from "./AskForm";
 
 const headings: Record<Locale, { title: string; lead: string }> = {
@@ -43,6 +44,17 @@ export default async function AskPage({
       <div className="mt-6 rounded-xl border border-line bg-surface p-4 sm:p-6">
         <AskForm locale={locale} />
       </div>
+
+      <Link
+        href={`/${locale}/qa`}
+        className="mt-5 inline-block text-sm font-semibold text-accent hover:underline"
+      >
+        {locale === "uz"
+          ? "Nashr etilgan javoblar →"
+          : locale === "en"
+            ? "Published answers →"
+            : "Опубликованные ответы →"}
+      </Link>
     </div>
   );
 }

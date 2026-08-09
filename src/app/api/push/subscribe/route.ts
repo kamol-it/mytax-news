@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 /** Браузер присылает свою подписку после разрешения уведомлений. */
@@ -8,6 +9,8 @@ export async function POST(request: Request) {
         endpoint?: string;
         keys?: { p256dh?: string; auth?: string };
         locale?: string;
+        questionToken?: string;
+        admin?: boolean;
       }
     | null;
 
@@ -19,14 +22,24 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Некорректная подписка" }, { status: 400 });
   }
 
+  // Подписку сотрудника оформляем только при действующей сессии админки
+  const admin = data?.admin === true ? Boolean(await getSession()) : false;
+  const questionToken = String(data?.questionToken ?? "").slice(0, 64);
+
+  const fields = {
+    p256dh,
+    auth,
+    locale: data?.locale ?? "uz",
+    admin,
+    questionToken,
+  };
+
   await prisma.pushSubscription.upsert({
     where: { endpoint },
-    update: { p256dh, auth, locale: data?.locale ?? "uz" },
+    update: fields,
     create: {
       endpoint,
-      p256dh,
-      auth,
-      locale: data?.locale ?? "uz",
+      ...fields,
       userAgent: (request.headers.get("user-agent") ?? "").slice(0, 200),
     },
   });

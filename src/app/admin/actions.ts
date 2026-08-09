@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { clearSessionCookie, getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { sendPushToAll } from "@/lib/push";
+import { replyAsConsultant } from "@/app/[locale]/ask/actions";
 import { SOCIAL_KEYS } from "@/lib/settings";
 import { removeFile } from "@/lib/storage";
 import { sanitizeHtml } from "@/lib/sanitize";
@@ -439,6 +440,25 @@ export async function sendTestPush(): Promise<void> {
 
 /* ---------------------------- вопросы консультанту --------------------------- */
 
+export type QuestionState = { error?: string; ok?: string };
+
+/** Ответ консультанта в ветке обращения. */
+export async function answerQuestion(
+  _prev: QuestionState,
+  formData: FormData,
+): Promise<QuestionState> {
+  const session = await requireSession();
+  const id = String(formData.get("id") ?? "");
+  const body = String(formData.get("body") ?? "").trim().slice(0, 4000);
+
+  if (body.length < 2) return { error: "Напишите ответ." };
+
+  await replyAsConsultant(id, session.name, body);
+  revalidatePath("/admin/questions");
+  revalidatePath("/admin");
+  return { ok: "Ответ отправлен." };
+}
+
 export async function toggleQuestionAnswered(formData: FormData) {
   await requireSession();
   const id = String(formData.get("id") ?? "");
@@ -450,6 +470,58 @@ export async function toggleQuestionAnswered(formData: FormData) {
     data: { answered: !question.answered },
   });
   revalidatePath("/admin/questions");
+  revalidatePath("/admin");
+}
+
+export async function toggleQuestionClosed(formData: FormData) {
+  await requireSession();
+  const id = String(formData.get("id") ?? "");
+  const question = await prisma.question.findUnique({ where: { id } });
+  if (!question) return;
+
+  await prisma.question.update({ where: { id }, data: { closed: !question.closed } });
+  revalidatePath("/admin/questions");
+}
+
+/**
+ * Публикация обращения в разделе «Вопрос-ответ».
+ * Имя и контакт посетителя на сайт не попадают — только тема и переписка.
+ */
+export async function togglePublished(formData: FormData) {
+  await requireSession();
+  const id = String(formData.get("id") ?? "");
+  const title = String(formData.get("publicTitle") ?? "").trim().slice(0, 200);
+
+  const question = await prisma.question.findUnique({
+    where: { id },
+    include: { messages: { orderBy: { createdAt: "asc" }, take: 1 } },
+  });
+  if (!question) return;
+
+  if (question.published) {
+    await prisma.question.update({ where: { id }, data: { published: false } });
+  } else {
+    const base =
+      title || question.topic || question.messages[0]?.body || question.body || "Вопрос";
+    const slug =
+      question.publicSlug ??
+      (await uniqueSlug(base, async (candidate) =>
+        Boolean(await prisma.question.findFirst({ where: { publicSlug: candidate } })),
+      ));
+
+    await prisma.question.update({
+      where: { id },
+      data: {
+        published: true,
+        publicSlug: slug,
+        publicTitle: title || base.slice(0, 200),
+        publishedAt: question.publishedAt ?? new Date(),
+      },
+    });
+  }
+
+  revalidatePath("/", "layout");
+  revalidatePath("/admin/questions");
 }
 
 export async function deleteQuestion(formData: FormData) {
@@ -457,4 +529,5 @@ export async function deleteQuestion(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   await prisma.question.delete({ where: { id } }).catch(() => undefined);
   revalidatePath("/admin/questions");
+  revalidatePath("/admin");
 }

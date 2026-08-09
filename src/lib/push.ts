@@ -15,6 +15,8 @@ function configure() {
   );
 }
 
+type Filter = { admin?: boolean; questionToken?: string };
+
 export type PushPayload = {
   title: string;
   body: string;
@@ -23,18 +25,27 @@ export type PushPayload = {
   tag?: string;
 };
 
-/**
- * Рассылает уведомление всем подписчикам.
- * Подписки, на которые push-сервис ответил 404/410, удаляются: браузер
- * отписался или удалил данные сайта, и они больше никогда не заработают.
- */
-export async function sendPushToAll(
-  payload: PushPayload,
-): Promise<{ sent: number; removed: number; failed: number }> {
+/** Уведомление сотрудникам: подписки, оформленные из админки. */
+export async function sendPushToAdmins(payload: PushPayload) {
+  return sendPush(payload, { admin: true });
+}
+
+/** Уведомление посетителю, подписавшемуся на ответ в своей ветке. */
+export async function sendPushToQuestion(token: string, payload: PushPayload) {
+  return sendPush(payload, { questionToken: token });
+}
+
+/** Рассылка читателям сайта: без подписок сотрудников и веток вопросов. */
+export async function sendPushToAll(payload: PushPayload) {
+  return sendPush(payload, { admin: false, questionToken: "" });
+}
+
+/** Отправка по выборке подписок с той же обработкой мёртвых endpoint-ов. */
+async function sendPush(payload: PushPayload, filter: Filter) {
   if (!pushConfigured()) return { sent: 0, removed: 0, failed: 0 };
   configure();
 
-  const subscriptions = await prisma.pushSubscription.findMany();
+  const subscriptions = await prisma.pushSubscription.findMany({ where: filter });
   const body = JSON.stringify(payload);
 
   let sent = 0;
@@ -45,10 +56,7 @@ export async function sendPushToAll(
     subscriptions.map(async (sub) => {
       try {
         await webpush.sendNotification(
-          {
-            endpoint: sub.endpoint,
-            keys: { p256dh: sub.p256dh, auth: sub.auth },
-          },
+          { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
           body,
         );
         sent += 1;

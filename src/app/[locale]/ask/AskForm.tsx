@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { submitQuestion, type AskState } from "./actions";
 import type { Locale } from "@/lib/i18n";
 
@@ -12,7 +13,6 @@ const texts: Record<Locale, Record<string, string>> = {
     body: "Savolingiz",
     submit: "Savol yuborish",
     sending: "Yuborilmoqda…",
-    ok: "Savolingiz qabul qilindi. Javobni ko‘rsatilgan kontaktga yuboramiz.",
     note: "Javob maslahat tarzida beriladi va rasmiy hujjat o‘rnini bosmaydi.",
   },
   ru: {
@@ -22,7 +22,6 @@ const texts: Record<Locale, Record<string, string>> = {
     body: "Ваш вопрос",
     submit: "Отправить вопрос",
     sending: "Отправляем…",
-    ok: "Вопрос принят. Ответ пришлём на указанный контакт.",
     note: "Ответ носит консультационный характер и не заменяет официальный документ.",
   },
   en: {
@@ -32,7 +31,6 @@ const texts: Record<Locale, Record<string, string>> = {
     body: "Your question",
     submit: "Send question",
     sending: "Sending…",
-    ok: "Your question has been received. We will reply to the contact you provided.",
     note: "The answer is advisory and does not replace an official document.",
   },
 };
@@ -40,17 +38,24 @@ const texts: Record<Locale, Record<string, string>> = {
 const field =
   "w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-base focus:border-accent focus:outline-none";
 
+/** Первое обращение: после отправки уводим посетителя в его ветку диалога. */
 export function AskForm({ locale }: { locale: Locale }) {
   const [state, action, pending] = useActionState<AskState, FormData>(submitQuestion, {});
+  const router = useRouter();
   const t = texts[locale];
 
-  if (state.ok) {
-    return (
-      <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
-        {t.ok}
-      </p>
-    );
-  }
+  useEffect(() => {
+    if (!state.token) return;
+    try {
+      const saved = JSON.parse(localStorage.getItem("mytax_threads") ?? "[]") as string[];
+      if (!saved.includes(state.token)) {
+        localStorage.setItem("mytax_threads", JSON.stringify([state.token, ...saved].slice(0, 20)));
+      }
+    } catch {
+      /* localStorage может быть недоступен */
+    }
+    router.push(`/${locale}/ask/${state.token}`);
+  }, [state.token, locale, router]);
 
   return (
     <form action={action} className="space-y-3">
