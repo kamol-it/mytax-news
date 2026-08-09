@@ -1,15 +1,18 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f6f6f7;
+  /* Палитра по фирменным материалам MYTAX: корпоративный синий,
+     светло-голубой фон, красный акцент логотипа. */
+  --background: #f1f7fc;
   --surface: #ffffff;
-  --foreground: #14161a;
-  --muted: #6b7280;
-  --border: #e4e4e7;
+  --foreground: #14202e;
+  --muted: #5c7085;
+  --border: #d8e6f2;
   --accent: #e11d1d;
   --accent-hover: #b91414;
-  /* тёмно-синий вместо чёрного: шапка, подвал, боковое меню админки */
-  --ink: #0b1e3d;
+  /* шапка, подвал, боковое меню админки */
+  --ink: #12599e;
+  --ink-dark: #0c4278;
 }
 
 @theme inline {
@@ -21,6 +24,7 @@
   --color-accent: var(--accent);
   --color-accent-hover: var(--accent-hover);
   --color-ink: var(--ink);
+  --color-ink-dark: var(--ink-dark);
   --font-sans: var(--font-geist-sans), system-ui, sans-serif;
 }
 

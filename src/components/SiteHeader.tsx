@@ -15,7 +15,7 @@ export async function SiteHeader({ locale }: { locale: Locale }) {
   ]);
 
   return (
-    <header className="bg-ink text-white">
+    <header className="bg-gradient-to-r from-ink-dark to-ink text-white">
       <div className="mx-auto flex max-w-6xl items-center gap-4 px-4 py-4">
         <Link href={`/${locale}`} aria-label={t.siteName}>
           <Logo />
