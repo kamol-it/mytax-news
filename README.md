@@ -1,36 +1,101 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# MYTAX.uz — новостной портал о налогах
 
-## Getting Started
+Новостной сайт с админ-панелью: публикация новостей на трёх языках (uz / ru / en),
+загрузка фотографий и видео, рубрики, поиск, SEO-разметка и sitemap.
 
-First, run the development server:
+Стек: **Next.js 16** (App Router, Server Actions) · **Prisma 7 + SQLite** ·
+**Tailwind CSS 4** · сессии на JWT в httpOnly-cookie (`jose` + `bcryptjs`).
+
+## Быстрый старт
 
 ```bash
+npm install
+npm run db:push    # создать схему в SQLite
+npm run db:seed    # админ + рубрики + примеры новостей
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Сайт: http://localhost:3000 (редирект на язык браузера) · Админка: http://localhost:3000/admin
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Демо-доступ после `db:seed`: `admin@mytax.uz` / `mytax2026` — **смените пароль перед публикацией сайта.**
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Переменные окружения
 
-## Learn More
+Файл `.env` (пример — в `.env.example`):
 
-To learn more about Next.js, take a look at the following resources:
+| Переменная | Назначение |
+| --- | --- |
+| `DATABASE_URL` | путь к файлу SQLite, например `file:./dev.db` |
+| `AUTH_SECRET` | секрет для подписи сессий, минимум 16 символов (`openssl rand -hex 32`) |
+| `NEXT_PUBLIC_SITE_URL` | публичный адрес сайта, используется в sitemap и OG-метатегах |
+| `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` | необязательно: логин и пароль администратора для `db:seed` |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Что умеет админка
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+`/admin` — обзор: счётчики новостей, черновиков, рубрик и файлов, последние изменения.
 
-## Deploy on Vercel
+`/admin/articles` — список с поиском по заголовку, фильтром «опубликованные / черновики»,
+переключением публикации в один клик и удалением.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+`/admin/articles/new` и `/admin/articles/[id]` — редактор новости:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- вкладки **O‘zbekcha / Русский / English** — заголовок, анонс и текст для каждого языка;
+  незаполненный язык автоматически подменяется имеющимся;
+- панель форматирования (абзац, подзаголовок, жирный, курсив, список, цитата, ссылка) —
+  текст хранится как HTML и очищается от `<script>`, `on*`-атрибутов и `javascript:`-ссылок;
+- **обложка** — загрузка изображения (JPEG/PNG/WebP/GIF/AVIF, до 10 МБ);
+- **видео** — либо загрузка файла (MP4/WebM/MOV, до 200 МБ), либо ссылка на YouTube
+  (встраивается через `youtube-nocookie.com`);
+- **фото в текст** — загрузка изображения и вставка `<figure>` в позицию курсора;
+- рубрика, ручной slug, флаги «Опубликовать» и «Главная новость».
+
+`/admin/categories` — рубрики (названия на трёх языках, порядок в меню).
+
+`/admin/media` — все загруженные файлы с предпросмотром и удалением (файл удаляется с диска).
+
+## Публичная часть
+
+- `/{uz|ru|en}` — главная: главная новость, лента, топ по просмотрам, список рубрик;
+- `/{locale}/news` — все новости с постраничной навигацией;
+- `/{locale}/category/{slug}` — новости рубрики;
+- `/{locale}/news/{slug}` — новость: обложка, видео, текст, галерея, похожие материалы, счётчик просмотров;
+- `/{locale}/search?q=` — поиск по заголовкам, анонсам и тексту;
+- `/robots.txt` и `/sitemap.xml` формируются автоматически.
+
+Язык выбирается по префиксу пути; `/` перенаправляется на язык из `Accept-Language`
+(по умолчанию `uz`). Переключатель языков в шапке сохраняет текущую страницу.
+
+## Структура
+
+```
+prisma/schema.prisma   модели User, Category, Article, Media
+prisma/seed.ts         админ, рубрики, демо-новости
+prisma.config.ts       конфигурация Prisma 7 CLI (адрес БД, seed)
+src/proxy.ts           префикс локали + защита /admin
+src/lib/               prisma, session/auth, i18n, slug, sanitize
+src/components/        шапка, подвал, карточка новости, плеер, пагинация
+src/app/[locale]/      публичные страницы
+src/app/admin/         вход и панель управления
+src/app/api/admin/     загрузка файлов
+public/uploads/        загруженные фото и видео (не в git)
+```
+
+## Развёртывание
+
+1. `npm ci && npm run build`, запуск — `npm start` (порт задаётся `PORT`).
+2. Задать в окружении `DATABASE_URL`, `AUTH_SECRET`, `NEXT_PUBLIC_SITE_URL`, применить схему: `npm run db:push`.
+3. Каталог `public/uploads` и файл БД должны лежать на постоянном диске и попадать в бэкап —
+   на платформах с эфемерной файловой системой (Vercel и подобных) загруженные файлы будут теряться,
+   для них нужно вынести хранилище в S3-совместимый сервис, а SQLite заменить на PostgreSQL.
+4. Настроить HTTPS на реверс-прокси: cookie сессии выставляется с флагом `Secure` в production.
+5. Ограничить на прокси размер тела запроса не ниже 200 МБ, иначе не пройдёт загрузка видео.
+
+## Полезные команды
+
+```bash
+npm run dev        # разработка
+npm run build      # production-сборка
+npm run db:studio  # Prisma Studio — просмотр и правка данных
+npm run lint       # ESLint
+npx tsc --noEmit   # проверка типов
+```

@@ -1,0 +1,97 @@
+"use client";
+
+import { useRef, useState } from "react";
+
+export function UploadField({
+  accept,
+  kind,
+  value,
+  articleId,
+  buttonLabel = "Выбрать файл",
+  onUploaded,
+  onClear,
+}: {
+  accept: string;
+  kind: "image" | "video";
+  value?: string;
+  articleId?: string;
+  buttonLabel?: string;
+  onUploaded: (url: string) => void;
+  onClear?: () => void;
+}) {
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function upload(file: File) {
+    setBusy(true);
+    setError(null);
+    try {
+      const body = new FormData();
+      body.set("file", file);
+      if (articleId) body.set("articleId", articleId);
+
+      const res = await fetch("/api/admin/upload", { method: "POST", body });
+      const data = (await res.json()) as { url?: string; error?: string };
+      if (!res.ok || !data.url) throw new Error(data.error ?? "Ошибка загрузки");
+      onUploaded(data.url);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Ошибка загрузки");
+    } finally {
+      setBusy(false);
+      if (inputRef.current) inputRef.current.value = "";
+    }
+  }
+
+  const isUploaded = Boolean(value && value.startsWith("/uploads/"));
+
+  return (
+    <div>
+      {isUploaded && kind === "image" ? (
+        // Файл из локальной папки uploads; обычный <img> здесь достаточен
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={value}
+          alt=""
+          className="mb-2 aspect-video w-full rounded-lg object-cover"
+        />
+      ) : null}
+      {isUploaded && kind === "video" ? (
+        <video src={value} controls className="mb-2 w-full rounded-lg bg-black" />
+      ) : null}
+
+      <input
+        ref={inputRef}
+        type="file"
+        accept={accept}
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) void upload(file);
+        }}
+      />
+
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => inputRef.current?.click()}
+          className="rounded-lg border border-line px-3 py-1.5 text-xs font-semibold hover:border-accent hover:text-accent disabled:opacity-60"
+        >
+          {busy ? "Загрузка…" : buttonLabel}
+        </button>
+        {value && onClear ? (
+          <button
+            type="button"
+            onClick={onClear}
+            className="rounded-lg px-2 py-1.5 text-xs text-muted hover:text-accent"
+          >
+            Убрать
+          </button>
+        ) : null}
+      </div>
+
+      {error ? <p className="mt-2 text-xs text-accent">{error}</p> : null}
+    </div>
+  );
+}
