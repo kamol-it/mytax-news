@@ -17,6 +17,7 @@ export type Dictionary = {
   tagline: string;
   nav: { home: string; all: string; search: string };
   latest: string;
+  topRead: string;
   featured: string;
   readMore: string;
   views: string;
@@ -42,6 +43,7 @@ const dictionaries: Record<Locale, Dictionary> = {
     tagline: "Soliq yangiliklari portali",
     nav: { home: "Bosh sahifa", all: "Barcha yangiliklar", search: "Qidiruv" },
     latest: "So‘nggi yangiliklar",
+    topRead: "Ko‘p o‘qilgan materiallar",
     featured: "Asosiy",
     readMore: "Batafsil",
     views: "ko‘rishlar",
@@ -66,6 +68,7 @@ const dictionaries: Record<Locale, Dictionary> = {
     tagline: "Портал налоговых новостей",
     nav: { home: "Главная", all: "Все новости", search: "Поиск" },
     latest: "Последние новости",
+    topRead: "Топ читаемых материалов",
     featured: "Главное",
     readMore: "Подробнее",
     views: "просмотров",
@@ -90,6 +93,7 @@ const dictionaries: Record<Locale, Dictionary> = {
     tagline: "Tax news portal",
     nav: { home: "Home", all: "All news", search: "Search" },
     latest: "Latest news",
+    topRead: "Most read",
     featured: "Top story",
     readMore: "Read more",
     views: "views",

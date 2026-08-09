@@ -75,6 +75,20 @@ model Article {
   @@index([categoryId])
 }
 
+/// Вопросы посетителей из формы «Спроси консультанта».
+model Question {
+  id        String   @id @default(cuid())
+  name      String
+  contact   String
+  topic     String   @default("")
+  body      String
+  locale    String   @default("ru")
+  answered  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([answered, createdAt])
+}
+
 /// Настройки сайта в виде ключ-значение: ссылки на соцсети и подобное.
 model Setting {
   key       String   @id

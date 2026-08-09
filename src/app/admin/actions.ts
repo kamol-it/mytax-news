@@ -435,3 +435,25 @@ export async function sendTestPush(): Promise<void> {
   });
   revalidatePath("/admin/settings");
 }
+
+/* ---------------------------- вопросы консультанту --------------------------- */
+
+export async function toggleQuestionAnswered(formData: FormData) {
+  await requireSession();
+  const id = String(formData.get("id") ?? "");
+  const question = await prisma.question.findUnique({ where: { id } });
+  if (!question) return;
+
+  await prisma.question.update({
+    where: { id },
+    data: { answered: !question.answered },
+  });
+  revalidatePath("/admin/questions");
+}
+
+export async function deleteQuestion(formData: FormData) {
+  await requireSession();
+  const id = String(formData.get("id") ?? "");
+  await prisma.question.delete({ where: { id } }).catch(() => undefined);
+  revalidatePath("/admin/questions");
+}

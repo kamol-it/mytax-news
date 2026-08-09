@@ -5,6 +5,12 @@ import { SocialLinks } from "@/components/SocialLinks";
 import { getDictionary, pickLocalized, type Locale } from "@/lib/i18n";
 import { prisma } from "@/lib/prisma";
 
+const askLabel: Record<Locale, string> = {
+  uz: "Maslahatchidan so‘rang",
+  ru: "Спроси консультанта",
+  en: "Ask a consultant",
+};
+
 export async function SiteHeader({ locale }: { locale: Locale }) {
   const t = getDictionary(locale);
   const [categories, pages] = await Promise.all([
@@ -69,6 +75,9 @@ export async function SiteHeader({ locale }: { locale: Locale }) {
               {pickLocalized(c, "name", locale)}
             </Link>
           ))}
+          <Link href={`/${locale}/ask`} className={`${navLink} font-semibold text-accent`}>
+            {askLabel[locale]}
+          </Link>
           {pages.map((p) => (
             <Link key={p.id} href={`/${locale}/pages/${p.slug}`} className={navLink}>
               {pickLocalized(p, "title", locale)}

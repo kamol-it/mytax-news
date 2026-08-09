@@ -25,6 +25,13 @@ export async function SiteFooter({ locale }: { locale: Locale }) {
           <Link href={`/${locale}/search`} className="hover:text-white">
             {t.nav.search}
           </Link>
+          <Link href={`/${locale}/ask`} className="hover:text-white">
+            {locale === "uz"
+              ? "Maslahatchidan so‘rang"
+              : locale === "en"
+                ? "Ask a consultant"
+                : "Спроси консультанта"}
+          </Link>
           {pages.map((p) => (
             <Link
               key={p.id}

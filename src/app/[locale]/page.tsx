@@ -73,7 +73,7 @@ export default async function HomePage({
         <aside className="space-y-8">
           <div className="rounded-xl border border-line bg-surface p-4">
             <h2 className="mb-2 text-sm font-bold uppercase tracking-widest text-muted">
-              TOP
+              {t.topRead}
             </h2>
             {popular.map((article) => (
               <ArticleCard
