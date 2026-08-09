@@ -1,12 +1,13 @@
 import "dotenv/config";
-import { defineConfig, env } from "prisma/config";
+import { defineConfig } from "prisma/config";
+import { databaseUrl } from "./src/lib/db-url";
 
 // Prisma 7: адрес БД для CLI (migrate / db push / studio / seed) живёт здесь,
 // а не в schema.prisma. Клиент подключается через адаптер в src/lib/prisma.ts.
 export default defineConfig({
   schema: "prisma/schema.prisma",
   datasource: {
-    url: env("DATABASE_URL"),
+    url: databaseUrl(),
   },
   migrations: {
     path: "prisma/migrations",

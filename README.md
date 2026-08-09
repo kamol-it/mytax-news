@@ -32,7 +32,7 @@ npm run dev
 
 | Переменная | Назначение |
 | --- | --- |
-| `DATABASE_URL` | строка подключения к PostgreSQL |
+| `DATABASE_URL` | строка подключения к PostgreSQL; вместо неё подходит `POSTGRES_URL`, которую добавляют некоторые интеграции |
 | `AUTH_SECRET` | секрет для подписи сессий, минимум 16 символов (`openssl rand -hex 32`) |
 | `NEXT_PUBLIC_SITE_URL` | публичный адрес сайта, используется в sitemap и OG-метатегах |
 | `BLOB_READ_WRITE_TOKEN` | необязательно: если задан, загрузки идут в Vercel Blob вместо `public/uploads` |
