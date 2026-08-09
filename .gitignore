@@ -44,3 +44,4 @@ dev.db-journal
 /public/uploads/*
 !/public/uploads/.gitkeep
 /src/generated
+!.env.example
