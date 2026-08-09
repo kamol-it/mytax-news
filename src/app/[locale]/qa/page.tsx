@@ -11,19 +11,19 @@ const headings: Record<Locale, { title: string; lead: string; empty: string; ask
     title: "Savol-javob",
     lead: "Maslahatchilarimiz javob bergan savollar. Ism va kontaktlar ko‘rsatilmaydi.",
     empty: "Hozircha nashr etilgan javoblar yo‘q.",
-    ask: "Savolingizni berish",
+    ask: "Maslahatchidan so‘rang",
   },
   ru: {
     title: "Вопрос-ответ",
     lead: "Вопросы читателей с ответами наших консультантов. Имена и контакты не публикуются.",
     empty: "Опубликованных ответов пока нет.",
-    ask: "Задать свой вопрос",
+    ask: "Спроси консультанта",
   },
   en: {
     title: "Q&A",
     lead: "Readers' questions answered by our consultants. Names and contacts are not published.",
     empty: "No published answers yet.",
-    ask: "Ask your question",
+    ask: "Ask a consultant",
   },
 };
 

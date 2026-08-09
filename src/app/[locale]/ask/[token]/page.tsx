@@ -11,17 +11,17 @@ export const dynamic = "force-dynamic";
 const headings: Record<Locale, { title: string; back: string; saveLink: string }> = {
   uz: {
     title: "Sizning murojaatingiz",
-    back: "Yangi savol berish",
+    back: "Yangi murojaat",
     saveLink: "Havolani saqlang: u orqali javobga qaytasiz.",
   },
   ru: {
     title: "Ваше обращение",
-    back: "Задать новый вопрос",
+    back: "Новое обращение к консультанту",
     saveLink: "Сохраните ссылку на эту страницу — по ней вы вернётесь к ответу.",
   },
   en: {
     title: "Your request",
-    back: "Ask a new question",
+    back: "New request to a consultant",
     saveLink: "Save this page link — it takes you back to the answer.",
   },
 };

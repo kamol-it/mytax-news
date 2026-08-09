@@ -10,9 +10,9 @@ export const revalidate = 300;
 type PageProps = { params: Promise<{ locale: string; slug: string }> };
 
 const labels: Record<Locale, { question: string; answer: string; back: string; ask: string }> = {
-  uz: { question: "Savol", answer: "Javob", back: "Barcha savollar", ask: "Savol berish" },
-  ru: { question: "Вопрос", answer: "Ответ", back: "Все вопросы", ask: "Задать вопрос" },
-  en: { question: "Question", answer: "Answer", back: "All questions", ask: "Ask a question" },
+  uz: { question: "Savol", answer: "Javob", back: "Barcha savollar", ask: "Maslahatchidan so‘rang" },
+  ru: { question: "Вопрос", answer: "Ответ", back: "Все вопросы", ask: "Спроси консультанта" },
+  en: { question: "Question", answer: "Answer", back: "All questions", ask: "Ask a consultant" },
 };
 
 async function load(slug: string) {
