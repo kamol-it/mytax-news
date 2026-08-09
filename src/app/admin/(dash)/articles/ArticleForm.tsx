@@ -19,6 +19,8 @@ export type ArticleFormValues = {
   bodyRu?: string;
   bodyEn?: string;
   coverImage?: string | null;
+  coverWidth?: number | null;
+  coverHeight?: number | null;
   videoUrl?: string | null;
   published?: boolean;
   featured?: boolean;
@@ -42,6 +44,10 @@ export function ArticleForm({
   );
   const [tab, setTab] = useState<Locale>("ru");
   const [cover, setCover] = useState(values.coverImage ?? "");
+  const [coverSize, setCoverSize] = useState({
+    width: values.coverWidth ?? 0,
+    height: values.coverHeight ?? 0,
+  });
   const [video, setVideo] = useState(values.videoUrl ?? "");
   const bodyRefs = useRef<Record<string, HTMLTextAreaElement | null>>({});
 
@@ -204,6 +210,14 @@ export function ArticleForm({
             <label className="mt-2 flex items-center gap-2 text-sm">
               <input
                 type="checkbox"
+                name="sendPush"
+                className="h-4 w-4 accent-[var(--accent)]"
+              />
+              Отправить push-уведомление
+            </label>
+            <label className="mt-2 flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
                 name="featured"
                 defaultChecked={values.featured ?? false}
                 className="h-4 w-4 accent-[var(--accent)]"
@@ -243,14 +257,28 @@ export function ArticleForm({
               Обложка
             </h2>
             <input type="hidden" name="coverImage" value={cover} />
+            <input type="hidden" name="coverWidth" value={coverSize.width || ""} />
+            <input type="hidden" name="coverHeight" value={coverSize.height || ""} />
             <UploadField
               accept="image/*"
               value={cover}
               kind="image"
               articleId={values.id}
-              onUploaded={(url) => setCover(url)}
-              onClear={() => setCover("")}
+              onUploaded={(url, size) => {
+                setCover(url);
+                setCoverSize(size ?? { width: 0, height: 0 });
+              }}
+              onClear={() => {
+                setCover("");
+                setCoverSize({ width: 0, height: 0 });
+              }}
             />
+            {coverSize.height > coverSize.width && coverSize.width > 0 ? (
+              <p className="mt-2 text-xs text-muted">
+                Вертикальная картинка: в лентах покажется верхняя часть, на странице
+                новости — целиком.
+              </p>
+            ) : null}
           </div>
 
           <div className="rounded-xl border border-line bg-surface p-4">

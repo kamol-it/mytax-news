@@ -49,8 +49,11 @@ model Article {
   bodyRu String @default("")
   bodyEn String @default("")
 
-  coverImage String? // путь вида /uploads/xxx.jpg
-  videoUrl   String? // загруженный файл /uploads/xxx.mp4 или ссылка на YouTube
+  coverImage String? // путь /uploads/xxx.jpg или ссылка на Vercel Blob
+  /// Размеры обложки: нужны, чтобы вертикальные инфографики не обрезались
+  coverWidth  Int?
+  coverHeight Int?
+  videoUrl    String? // загруженный файл или ссылка на YouTube
 
   published   Boolean   @default(false)
   featured    Boolean   @default(false)
@@ -70,6 +73,24 @@ model Article {
 
   @@index([published, publishedAt])
   @@index([categoryId])
+}
+
+/// Настройки сайта в виде ключ-значение: ссылки на соцсети и подобное.
+model Setting {
+  key       String   @id
+  value     String   @default("")
+  updatedAt DateTime @updatedAt
+}
+
+/// Подписки браузеров на push-уведомления о новых новостях.
+model PushSubscription {
+  id        String   @id @default(cuid())
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  locale    String   @default("uz")
+  userAgent String   @default("")
+  createdAt DateTime @default(now())
 }
 
 /// Статические страницы: «О нас», «Контакты», «Реклама» и подобные.
@@ -99,6 +120,8 @@ model Media {
   mimeType  String
   size      Int
   kind      String // "image" | "video"
+  width     Int?
+  height    Int?
   createdAt DateTime @default(now())
 
   articleId String?

@@ -61,7 +61,7 @@ export default async function ArticlesPage({
           name="q"
           defaultValue={query}
           placeholder="Поиск по заголовку…"
-          className="w-56 rounded-lg border border-line bg-surface px-3 py-2 focus:border-accent focus:outline-none"
+          className="min-w-0 flex-1 rounded-lg border border-line bg-surface px-3 py-2 focus:border-accent focus:outline-none sm:w-56 sm:flex-none"
         />
         <select
           name="status"
@@ -85,14 +85,24 @@ export default async function ArticlesPage({
           <p className="p-4 text-sm text-muted">Ничего не найдено.</p>
         ) : (
           articles.map((a) => (
-            <div key={a.id} className="flex items-center gap-3 p-3">
+            <div key={a.id} className="flex flex-wrap items-center gap-3 p-3">
               <div className="relative h-12 w-16 shrink-0 overflow-hidden rounded bg-background">
                 {a.coverImage ? (
-                  <Image src={a.coverImage} alt="" fill sizes="64px" className="object-cover" />
+                  <Image
+                    src={a.coverImage}
+                    alt=""
+                    fill
+                    sizes="64px"
+                    className={
+                      a.coverHeight && a.coverWidth && a.coverHeight > a.coverWidth
+                        ? "object-cover object-top"
+                        : "object-cover"
+                    }
+                  />
                 ) : null}
               </div>
 
-              <div className="min-w-0 flex-1">
+              <div className="min-w-0 flex-1 basis-40">
                 <Link
                   href={`/admin/articles/${a.id}`}
                   className="block truncate font-medium hover:text-accent"
@@ -106,7 +116,7 @@ export default async function ArticlesPage({
                 </p>
               </div>
 
-              <form action={toggleArticlePublished} className="shrink-0">
+              <form action={toggleArticlePublished} className="ml-auto shrink-0">
                 <input type="hidden" name="id" value={a.id} />
                 <button
                   type="submit"

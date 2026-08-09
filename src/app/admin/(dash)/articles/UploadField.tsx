@@ -16,25 +16,51 @@ export function UploadField({
   value?: string;
   articleId?: string;
   buttonLabel?: string;
-  onUploaded: (url: string) => void;
+  onUploaded: (url: string, size?: { width: number; height: number }) => void;
   onClear?: () => void;
 }) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  /** Размеры изображения нужны, чтобы вертикальные картинки не обрезались. */
+  async function measure(file: File): Promise<{ width: number; height: number } | null> {
+    if (!file.type.startsWith("image/")) return null;
+    try {
+      const bitmap = await createImageBitmap(file);
+      const size = { width: bitmap.width, height: bitmap.height };
+      bitmap.close();
+      return size;
+    } catch {
+      return null;
+    }
+  }
+
   async function upload(file: File) {
     setBusy(true);
     setError(null);
     try {
+      const size = await measure(file);
       const body = new FormData();
       body.set("file", file);
       if (articleId) body.set("articleId", articleId);
+      if (size) {
+        body.set("width", String(size.width));
+        body.set("height", String(size.height));
+      }
 
       const res = await fetch("/api/admin/upload", { method: "POST", body });
-      const data = (await res.json()) as { url?: string; error?: string };
+      const data = (await res.json()) as {
+        url?: string;
+        error?: string;
+        width?: number | null;
+        height?: number | null;
+      };
       if (!res.ok || !data.url) throw new Error(data.error ?? "Ошибка загрузки");
-      onUploaded(data.url);
+      onUploaded(
+        data.url,
+        data.width && data.height ? { width: data.width, height: data.height } : undefined,
+      );
     } catch (e) {
       setError(e instanceof Error ? e.message : "Ошибка загрузки");
     } finally {

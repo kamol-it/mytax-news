@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { HtmlLang } from "@/components/HtmlLang";
+import { PushPrompt } from "@/components/PushPrompt";
 import { isLocale, locales } from "@/lib/i18n";
 
 export function generateStaticParams() {
@@ -24,6 +25,7 @@ export default async function LocaleLayout({
       <SiteHeader locale={locale} />
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">{children}</main>
       <SiteFooter locale={locale} />
+      <PushPrompt locale={locale} />
     </div>
   );
 }

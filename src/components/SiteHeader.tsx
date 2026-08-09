@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Logo } from "@/components/Logo";
 import { LocaleSwitcher } from "@/components/LocaleSwitcher";
+import { SocialLinks } from "@/components/SocialLinks";
 import { getDictionary, pickLocalized, type Locale } from "@/lib/i18n";
 import { prisma } from "@/lib/prisma";
 
@@ -14,51 +15,62 @@ export async function SiteHeader({ locale }: { locale: Locale }) {
     }),
   ]);
 
+  const navLink =
+    "whitespace-nowrap rounded px-3 py-2 text-sm font-medium text-foreground/80 transition hover:bg-background hover:text-accent";
+
   return (
-    <header className="bg-gradient-to-r from-ink-dark to-ink text-white">
-      <div className="mx-auto flex max-w-6xl items-center gap-4 px-4 py-4">
+    <header className="sticky top-0 z-30 border-b border-line bg-surface">
+      <div className="mx-auto flex max-w-6xl items-center gap-4 px-4 py-3">
         <Link href={`/${locale}`} aria-label={t.siteName}>
           <Logo />
         </Link>
-        <span className="hidden text-xs text-white/45 sm:block">{t.tagline}</span>
+        <span className="hidden text-xs text-muted lg:block">{t.tagline}</span>
 
-        <div className="ml-auto flex items-center gap-3">
+        <div className="ml-auto flex items-center gap-2 sm:gap-3">
           <form action={`/${locale}/search`} className="hidden sm:block">
             <input
               type="search"
               name="q"
               placeholder={t.searchPlaceholder}
               aria-label={t.nav.search}
-              className="w-56 rounded-full border border-white/15 bg-white/5 px-4 py-1.5 text-sm text-white placeholder:text-white/40 focus:border-accent focus:outline-none"
+              className="w-44 rounded-full border border-line bg-background px-4 py-1.5 text-sm text-foreground placeholder:text-muted focus:border-accent focus:outline-none lg:w-56"
             />
           </form>
+
+          <Link
+            href={`/${locale}/search`}
+            aria-label={t.nav.search}
+            className="rounded-full border border-line p-2 text-muted transition hover:border-accent hover:text-accent sm:hidden"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              className="h-4 w-4"
+            >
+              <circle cx="11" cy="11" r="7" />
+              <path d="m20 20-3.5-3.5" strokeLinecap="round" />
+            </svg>
+          </Link>
+
+          <SocialLinks className="hidden lg:flex" size="sm" tone="light" />
           <LocaleSwitcher locale={locale} />
         </div>
       </div>
 
-      <nav className="border-t border-white/10">
-        <div className="mx-auto flex max-w-6xl gap-1 overflow-x-auto px-4 py-1 text-sm">
-          <Link
-            href={`/${locale}/news`}
-            className="whitespace-nowrap rounded px-3 py-2 text-white/75 transition hover:bg-white/10 hover:text-white"
-          >
+      <nav className="border-t border-line">
+        <div className="mx-auto flex max-w-6xl gap-1 overflow-x-auto px-3 py-1">
+          <Link href={`/${locale}/news`} className={navLink}>
             {t.nav.all}
           </Link>
           {categories.map((c) => (
-            <Link
-              key={c.id}
-              href={`/${locale}/category/${c.slug}`}
-              className="whitespace-nowrap rounded px-3 py-2 text-white/75 transition hover:bg-white/10 hover:text-white"
-            >
+            <Link key={c.id} href={`/${locale}/category/${c.slug}`} className={navLink}>
               {pickLocalized(c, "name", locale)}
             </Link>
           ))}
           {pages.map((p) => (
-            <Link
-              key={p.id}
-              href={`/${locale}/pages/${p.slug}`}
-              className="whitespace-nowrap rounded px-3 py-2 text-white/75 transition hover:bg-white/10 hover:text-white"
-            >
+            <Link key={p.id} href={`/${locale}/pages/${p.slug}`} className={navLink}>
               {pickLocalized(p, "title", locale)}
             </Link>
           ))}

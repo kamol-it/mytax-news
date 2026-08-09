@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { ArticleCard } from "@/components/ArticleCard";
 import { VideoEmbed } from "@/components/VideoEmbed";
+import { ShareButtons } from "@/components/ShareButtons";
 import {
   formatDate,
   getDictionary,
@@ -80,7 +81,7 @@ export default async function ArticlePage({ params }: PageProps) {
 
   return (
     <article className="mx-auto max-w-3xl">
-      <div className="flex items-center gap-3 text-xs text-muted">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">
         {article.category ? (
           <Link
             href={`/${locale}/category/${article.category.slug}`}
@@ -89,7 +90,7 @@ export default async function ArticlePage({ params }: PageProps) {
             {pickLocalized(article.category, "name", locale)}
           </Link>
         ) : null}
-        <span>
+        <span className="whitespace-nowrap">
           {t.publishedOn}: {formatDate(article.publishedAt ?? article.createdAt, locale)}
         </span>
         <span>
@@ -97,20 +98,22 @@ export default async function ArticlePage({ params }: PageProps) {
         </span>
       </div>
 
-      <h1 className="mt-3 text-3xl font-black leading-tight sm:text-4xl">{title}</h1>
-      {excerpt ? <p className="mt-3 text-lg text-muted">{excerpt}</p> : null}
+      <h1 className="mt-3 text-2xl font-black leading-tight sm:text-4xl">{title}</h1>
+      {excerpt ? <p className="mt-3 text-base text-muted sm:text-lg">{excerpt}</p> : null}
       {article.author ? (
         <p className="mt-3 text-sm text-muted">✎ {article.author.name}</p>
       ) : null}
 
       {article.coverImage ? (
-        <div className="relative mt-6 aspect-[16/9] overflow-hidden rounded-xl bg-background">
+        // Показываем обложку целиком: вертикальные инфографики нельзя обрезать
+        <div className="mt-6 overflow-hidden rounded-xl bg-background">
           <Image
             src={article.coverImage}
             alt={title}
-            fill
+            width={article.coverWidth ?? 1200}
+            height={article.coverHeight ?? 675}
             sizes="(max-width: 768px) 100vw, 768px"
-            className="object-cover"
+            className="mx-auto h-auto w-full max-w-full"
             priority
           />
         </div>
@@ -138,9 +141,11 @@ export default async function ArticlePage({ params }: PageProps) {
         </div>
       ) : null}
 
+      <ShareButtons title={title} />
+
       <Link
         href={`/${locale}/news`}
-        className="mt-10 inline-block text-sm font-semibold text-accent hover:underline"
+        className="mt-8 inline-block text-sm font-semibold text-accent hover:underline"
       >
         ← {t.backToNews}
       </Link>

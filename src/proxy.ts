@@ -42,5 +42,7 @@ function pickLocale(request: NextRequest): string {
 }
 
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|uploads|favicon.ico|robots.txt|sitemap.xml).*)"],
+  // Пропускаем api, служебные пути Next и любые файлы с расширением:
+  // sw.js, manifest.webmanifest, иконки и картинки не должны уезжать на /uz/...
+  matcher: ["/((?!api|_next/static|_next/image|uploads|.*\\.[a-zA-Z0-9]+$).*)"],
 };

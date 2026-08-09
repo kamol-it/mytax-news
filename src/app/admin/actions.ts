@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { clearSessionCookie, getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { sendPushToAll } from "@/lib/push";
+import { SOCIAL_KEYS } from "@/lib/settings";
 import { removeFile } from "@/lib/storage";
 import { sanitizeHtml } from "@/lib/sanitize";
 import { slugify, uniqueSlug } from "@/lib/slug";
@@ -61,6 +63,10 @@ export async function saveArticle(
   const published = formData.get("published") === "on";
   const featured = formData.get("featured") === "on";
   const coverImage = text("coverImage") || null;
+  const size = (key: string) => {
+    const value = Number(text(key));
+    return Number.isFinite(value) && value > 0 ? Math.round(value) : null;
+  };
   const videoUrl = text("videoUrl") || null;
 
   const data = {
@@ -74,6 +80,8 @@ export async function saveArticle(
     bodyRu: sanitizeHtml(text("bodyRu")),
     bodyEn: sanitizeHtml(text("bodyEn")),
     coverImage,
+    coverWidth: coverImage ? size("coverWidth") : null,
+    coverHeight: coverImage ? size("coverHeight") : null,
     videoUrl,
     published,
     featured,
@@ -118,8 +126,22 @@ export async function saveArticle(
     });
   }
 
+  // Уведомление подписчикам — только по явной галочке и только для опубликованных
+  let pushed = "";
+  if (published && formData.get("sendPush") === "on") {
+    const site = process.env.NEXT_PUBLIC_SITE_URL ?? "";
+    const result = await sendPushToAll({
+      title: data.titleRu || data.titleUz || data.titleEn,
+      body: data.excerptRu || data.excerptUz || data.excerptEn || "MYTAX — yangi yangilik",
+      url: `${site}/ru/news/${slug}`,
+      image: coverImage,
+      tag: slug,
+    });
+    pushed = `&pushed=${result.sent}`;
+  }
+
   refreshPublicPages(slug);
-  redirect("/admin/articles?saved=1");
+  redirect(`/admin/articles?saved=1${pushed}`);
 }
 
 export async function toggleArticlePublished(formData: FormData) {
@@ -381,4 +403,35 @@ export async function changeOwnPassword(
   });
 
   return { ok: "Пароль изменён." };
+}
+
+/* --------------------------- настройки и соцсети --------------------------- */
+
+export async function saveSettings(formData: FormData) {
+  await requireAdmin();
+
+  for (const { key } of SOCIAL_KEYS) {
+    const value = String(formData.get(key) ?? "").trim();
+    await prisma.setting.upsert({
+      where: { key },
+      update: { value },
+      create: { key, value },
+    });
+  }
+
+  revalidatePath("/", "layout");
+  revalidatePath("/admin/settings");
+}
+
+/** Проверочное уведомление — приходит только тому, кто нажал. */
+export async function sendTestPush(): Promise<void> {
+  await requireAdmin();
+  const site = process.env.NEXT_PUBLIC_SITE_URL ?? "";
+  await sendPushToAll({
+    title: "MYTAX — проверка уведомлений",
+    body: "Так будет выглядеть уведомление о новой новости.",
+    url: `${site}/ru`,
+    tag: "mytax-test",
+  });
+  revalidatePath("/admin/settings");
 }

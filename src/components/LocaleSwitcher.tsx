@@ -12,7 +12,7 @@ export function LocaleSwitcher({ locale }: { locale: Locale }) {
   const rest = isLocale(segments[1]) ? segments.slice(2).join("/") : segments.slice(1).join("/");
 
   return (
-    <div className="flex items-center gap-0.5 rounded-full border border-white/15 p-0.5 text-xs font-semibold">
+    <div className="flex items-center gap-0.5 rounded-full border border-line p-0.5 text-xs font-semibold">
       {locales.map((l) => {
         const active = l === locale;
         return (
@@ -23,7 +23,7 @@ export function LocaleSwitcher({ locale }: { locale: Locale }) {
             className={
               active
                 ? "rounded-full bg-accent px-2.5 py-1 text-white"
-                : "rounded-full px-2.5 py-1 text-white/60 transition hover:text-white"
+                : "rounded-full px-2.5 py-1 text-muted transition hover:text-foreground"
             }
           >
             {labels[l]}

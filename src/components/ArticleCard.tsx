@@ -10,6 +10,8 @@ import {
 export type ArticleCardData = {
   slug: string;
   coverImage: string | null;
+  coverWidth?: number | null;
+  coverHeight?: number | null;
   videoUrl: string | null;
   publishedAt: Date | null;
   createdAt: Date;
@@ -27,6 +29,11 @@ export function ArticleCard({
   variant?: "default" | "hero" | "compact";
 }) {
   const t = getDictionary(locale);
+  // Вертикальные картинки (инфографика) кадрируем сверху: там заголовок
+  const portrait =
+    Boolean(article.coverWidth && article.coverHeight) &&
+    article.coverHeight! > article.coverWidth!;
+  const fit = portrait ? "object-cover object-top" : "object-cover object-center";
   const title = pickLocalized(article, "title", locale);
   const excerpt = pickLocalized(article, "excerpt", locale);
   const date = formatDate(article.publishedAt ?? article.createdAt, locale);
@@ -37,7 +44,7 @@ export function ArticleCard({
       <article className="flex gap-3 border-b border-line py-3 last:border-0">
         {article.coverImage ? (
           <Link href={href} className="relative h-16 w-24 shrink-0 overflow-hidden rounded">
-            <Image src={article.coverImage} alt="" fill sizes="96px" className="object-cover" />
+            <Image src={article.coverImage} alt="" fill sizes="96px" className={fit} />
           </Link>
         ) : null}
         <div className="min-w-0">
@@ -68,12 +75,12 @@ export function ArticleCard({
             alt={title}
             fill
             sizes={hero ? "(max-width: 640px) 100vw, 50vw" : "(max-width: 768px) 100vw, 33vw"}
-            className="object-cover transition group-hover:scale-[1.02]"
+            className={`${fit} transition group-hover:scale-[1.02]`}
             priority={hero}
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center text-3xl font-black text-line">
-            MYTAX
+            <span className="text-accent/25">MY</span>TAX
           </div>
         )}
         {article.videoUrl ? (
@@ -84,7 +91,7 @@ export function ArticleCard({
       </Link>
 
       <div className={`p-4 ${hero ? "sm:w-1/2 sm:p-6" : ""}`}>
-        <div className="flex items-center gap-2 text-xs text-muted">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted">
           {article.category ? (
             <Link
               href={`/${locale}/category/${article.category.slug}`}
@@ -93,7 +100,7 @@ export function ArticleCard({
               {pickLocalized(article.category, "name", locale)}
             </Link>
           ) : null}
-          <span>{date}</span>
+          <span className="whitespace-nowrap">{date}</span>
         </div>
 
         <h2 className={`mt-2 font-bold leading-snug ${hero ? "text-2xl" : "text-lg"}`}>

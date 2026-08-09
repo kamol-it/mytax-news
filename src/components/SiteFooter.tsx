@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Logo } from "@/components/Logo";
+import { SocialLinks } from "@/components/SocialLinks";
 import { getDictionary, pickLocalized, type Locale } from "@/lib/i18n";
 import { prisma } from "@/lib/prisma";
 
@@ -13,8 +14,9 @@ export async function SiteFooter({ locale }: { locale: Locale }) {
     <footer className="mt-16 bg-ink text-white/60">
       <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-10 sm:flex-row sm:items-start sm:justify-between">
         <div className="max-w-sm">
-          <Logo className="text-xl" />
+          <Logo tone="dark" size="sm" />
           <p className="mt-3 text-sm leading-relaxed">{t.footerAbout}</p>
+          <SocialLinks className="mt-4" />
         </div>
         <div className="flex flex-col gap-2 text-sm">
           <Link href={`/${locale}/news`} className="hover:text-white">

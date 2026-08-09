@@ -51,6 +51,13 @@ export async function POST(request: Request) {
   const { url } = await saveFile(filename, file);
 
   const articleId = String(formData.get("articleId") ?? "").trim() || null;
+  // Размеры измеряет браузер при выборе файла — сервер их только сохраняет
+  const dimension = (key: string) => {
+    const value = Number(formData.get(key));
+    return Number.isFinite(value) && value > 0 ? Math.round(value) : null;
+  };
+  const width = dimension("width");
+  const height = dimension("height");
 
   const media = await prisma.media.create({
     data: {
@@ -59,9 +66,11 @@ export async function POST(request: Request) {
       mimeType: file.type,
       size: file.size,
       kind: meta.kind,
+      width,
+      height,
       articleId,
     },
   });
 
-  return NextResponse.json({ id: media.id, url, kind: meta.kind });
+  return NextResponse.json({ id: media.id, url, kind: meta.kind, width, height });
 }
