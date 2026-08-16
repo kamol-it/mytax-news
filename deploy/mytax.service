@@ -1,0 +1,37 @@
+# systemd-юнит для MYTAX.uz.
+# Скопировать в /etc/systemd/system/mytax.service, затем:
+#   sudo systemctl daemon-reload && sudo systemctl enable --now mytax
+
+[Unit]
+Description=MYTAX.uz — новостной портал (Next.js)
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=mytax
+Group=mytax
+WorkingDirectory=/var/www/mytax
+
+# Переменные окружения лежат в отдельном файле с правами 600
+EnvironmentFile=/var/www/mytax/.env
+Environment=NODE_ENV=production
+Environment=PORT=3000
+
+ExecStart=/usr/bin/npm start
+Restart=always
+RestartSec=5
+
+# Ограничения доступа к системе
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/www/mytax/public/uploads /var/www/mytax/.next
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=mytax
+
+[Install]
+WantedBy=multi-user.target

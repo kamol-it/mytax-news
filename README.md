@@ -121,12 +121,17 @@ Vercel включает защиту деплоя (Vercel Authentication) зан
 
 ## Развёртывание на своём сервере
 
-1. `npm ci && npm run build`, запуск — `npm start` (порт задаётся `PORT`).
-2. Задать `DATABASE_URL`, `AUTH_SECRET`, `NEXT_PUBLIC_SITE_URL`, применить схему: `npm run db:push`.
-3. Без `BLOB_READ_WRITE_TOKEN` файлы пишутся в `public/uploads` — каталог должен лежать
+Пошаговая инструкция — в [DEPLOY.md](DEPLOY.md); готовые конфиги лежат в `deploy/`
+(nginx, systemd, скрипт обновления). Коротко:
+
+1. Node 20+, PostgreSQL 14+, nginx.
+2. `.env` с `DATABASE_URL`, `AUTH_SECRET`, `NEXT_PUBLIC_SITE_URL` (и ключами VAPID для push).
+3. `npm ci` → `npm run db:push` → `npm run db:seed` → `npm run build` → служба `npm start`.
+4. В nginx обязательно `client_max_body_size 200m` и проброс `X-Forwarded-For`:
+   первое нужно для загрузки видео, второе — чтобы ограничение частоты запросов
+   считалось по посетителю, а не по всему сайту сразу.
+5. Без `BLOB_READ_WRITE_TOKEN` файлы пишутся в `public/uploads` — каталог должен лежать
    на постоянном диске и попадать в бэкап вместе с базой.
-4. Настроить HTTPS на реверс-прокси: cookie сессии выставляется с флагом `Secure` в production.
-5. Поднять на прокси лимит размера тела запроса минимум до 200 МБ, иначе не пройдёт загрузка видео.
 
 ## Про GitHub Pages
 
