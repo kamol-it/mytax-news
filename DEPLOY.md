@@ -91,6 +91,34 @@ sudo -u mytax npm run build
 удалите в админке. **После первого входа смените пароль в разделе
 «Пользователи» и уберите `SEED_ADMIN_PASSWORD` из окружения.**
 
+### Если на сервере 1 ГБ памяти
+
+Сборке Next.js нужно около гигабайта, и на тарифах с 1 ГБ она падает с
+`JavaScript heap out of memory` или убивается системой. Два рабочих пути.
+
+**Путь 1 — swap на сервере** (проще, сборка идёт медленнее):
+
+```bash
+sudo fallocate -l 2G /swapfile
+sudo chmod 600 /swapfile
+sudo mkswap /swapfile
+sudo swapon /swapfile
+echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+sudo -u mytax NODE_OPTIONS="--max-old-space-size=768" npm run build
+```
+
+**Путь 2 — сборка на своём компьютере** (сервер вообще не нагружается):
+
+```bash
+# локально, в папке проекта
+npm ci && npm run build
+rsync -az --delete .next/ mytax.uz:/var/www/mytax/.next/
+ssh mytax.uz "sudo systemctl restart mytax"
+```
+
+При втором пути на сервере всё равно нужны `npm ci` (зависимости для запуска)
+и `npm run db:push`, но не `npm run build`.
+
 ## 6. Автозапуск
 
 ```bash
