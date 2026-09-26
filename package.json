@@ -13,7 +13,8 @@
     "postinstall": "prisma generate",
     "vercel-build": "node scripts/db-push.mjs && next build",
     "deploy": "vercel deploy --prod --yes && node scripts/unprotect.mjs",
-    "start:passenger": "node server.js"
+    "start:passenger": "node server.js",
+    "test": "tsx --test \"src/**/*.test.ts\""
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.9.1",
