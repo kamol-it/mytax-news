@@ -6,7 +6,7 @@ import { clientIpFromHeaders } from "@/lib/client-ip";
 import { isLocale } from "@/lib/i18n";
 import { prisma } from "@/lib/prisma";
 import { newToken } from "@/lib/questions";
-import { sendPushToAdmins, sendPushToQuestion } from "@/lib/push";
+import { sendPushToAdmins } from "@/lib/push";
 import { rateLimit } from "@/lib/rate-limit";
 
 export type AskState = { error?: string; token?: string };
@@ -119,34 +119,4 @@ export async function replyAsVisitor(
   revalidatePath(`/${question.locale}/ask/${token}`);
   revalidatePath("/admin/questions");
   return { token };
-}
-
-/** Ответ консультанта из админки. */
-export async function replyAsConsultant(
-  questionId: string,
-  authorName: string,
-  body: string,
-): Promise<void> {
-  const question = await prisma.question.findUnique({ where: { id: questionId } });
-  if (!question) return;
-
-  await prisma.$transaction([
-    prisma.questionMessage.create({
-      data: { questionId, author: "consultant", body, authorName },
-    }),
-    prisma.question.update({
-      where: { id: questionId },
-      data: { answered: true, lastMessageAt: new Date() },
-    }),
-  ]);
-
-  if (question.token) {
-    await sendPushToQuestion(question.token, {
-      title: "MYTAX: есть ответ на ваш вопрос",
-      body: body.slice(0, 140),
-      url: `${process.env.NEXT_PUBLIC_SITE_URL ?? ""}/${question.locale}/ask/${question.token}`,
-      tag: `mytax-answer-${question.token}`,
-    });
-    revalidatePath(`/${question.locale}/ask/${question.token}`);
-  }
 }

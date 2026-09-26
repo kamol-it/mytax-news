@@ -4,8 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { clearSessionCookie, getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { sendPushToAll } from "@/lib/push";
-import { replyAsConsultant } from "@/app/[locale]/ask/actions";
+import { sendPushToAll, sendPushToQuestion } from "@/lib/push";
 import { SOCIAL_KEYS } from "@/lib/settings";
 import { removeFile } from "@/lib/storage";
 import { sanitizeHtml } from "@/lib/sanitize";
@@ -441,6 +440,40 @@ export async function sendTestPush(): Promise<void> {
 /* ---------------------------- вопросы консультанту --------------------------- */
 
 export type QuestionState = { error?: string; ok?: string };
+
+/**
+ * Запись ответа консультанта. Не экспортируется: экспорт из модуля
+ * "use server" становится публичным server action, а здесь нет проверки
+ * сессии — её делает answerQuestion.
+ */
+async function replyAsConsultant(
+  questionId: string,
+  authorName: string,
+  body: string,
+): Promise<void> {
+  const question = await prisma.question.findUnique({ where: { id: questionId } });
+  if (!question) return;
+
+  await prisma.$transaction([
+    prisma.questionMessage.create({
+      data: { questionId, author: "consultant", body, authorName },
+    }),
+    prisma.question.update({
+      where: { id: questionId },
+      data: { answered: true, lastMessageAt: new Date() },
+    }),
+  ]);
+
+  if (question.token) {
+    await sendPushToQuestion(question.token, {
+      title: "MYTAX: есть ответ на ваш вопрос",
+      body: body.slice(0, 140),
+      url: `${process.env.NEXT_PUBLIC_SITE_URL ?? ""}/${question.locale}/ask/${question.token}`,
+      tag: `mytax-answer-${question.token}`,
+    });
+    revalidatePath(`/${question.locale}/ask/${question.token}`);
+  }
+}
 
 /** Ответ консультанта в ветке обращения. */
 export async function answerQuestion(
