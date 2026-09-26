@@ -8,6 +8,11 @@ export type SessionPayload = {
   email: string;
   name: string;
   role: "ADMIN" | "EDITOR";
+  /**
+   * Отпечаток пароля на момент входа (см. passwordVersion в auth.ts).
+   * После смены пароля он перестаёт совпадать, и старые сессии недействительны.
+   */
+  pv?: string;
 };
 
 function secret(): Uint8Array {
@@ -38,6 +43,7 @@ export async function verifySession(
       email: String(payload.email ?? ""),
       name: String(payload.name ?? ""),
       role: payload.role === "ADMIN" ? "ADMIN" : "EDITOR",
+      pv: typeof payload.pv === "string" ? payload.pv : undefined,
     };
   } catch {
     return null;

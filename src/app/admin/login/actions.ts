@@ -4,7 +4,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
-import { setSessionCookie, signSession } from "@/lib/auth";
+import { sessionTokenFor, setSessionCookie } from "@/lib/auth";
 import { clientIpFromHeaders } from "@/lib/client-ip";
 import { rateLimit, resetRateLimit } from "@/lib/rate-limit";
 
@@ -54,13 +54,7 @@ export async function login(
     resetRateLimit(`login-email:${email}`),
   ]);
 
-  const token = await signSession({
-    sub: user.id,
-    email: user.email,
-    name: user.name,
-    role: user.role === "ADMIN" ? "ADMIN" : "EDITOR",
-  });
-  await setSessionCookie(token);
+  await setSessionCookie(await sessionTokenFor(user));
 
   redirect(next.startsWith("/admin") ? next : "/admin");
 }

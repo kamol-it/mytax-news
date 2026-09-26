@@ -2,7 +2,6 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { Logo } from "@/components/Logo";
-import { prisma } from "@/lib/prisma";
 import { logout } from "../actions";
 
 export const metadata = { title: "Админ-панель MYTAX" };
@@ -23,16 +22,10 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
+  // getSession сверяет токен с базой: удалённый пользователь или сессия,
+  // выданная до смены пароля, сюда не проходят.
   const session = await getSession();
   if (!session) redirect("/admin/login");
-
-  // Токен живёт 12 часов, поэтому проверяем, что учётка ещё существует:
-  // иначе удалённый пользователь сохранял бы доступ до истечения сессии.
-  const user = await prisma.user.findUnique({
-    where: { id: session.sub },
-    select: { id: true, role: true },
-  });
-  if (!user) redirect("/admin/login?expired=1");
 
   return (
     <div className="flex min-h-screen bg-background">
