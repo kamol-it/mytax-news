@@ -130,7 +130,8 @@ Vercel включает защиту деплоя (Vercel Authentication) зан
 1. Node 20+, PostgreSQL 14+, nginx.
 2. `.env` с `DATABASE_URL`, `AUTH_SECRET`, `NEXT_PUBLIC_SITE_URL` (и ключами VAPID для push).
 3. `npm ci` → `npm run db:push` → `npm run db:seed` → `npm run build` → служба `npm start`.
-4. В nginx обязательно `client_max_body_size 200m` и проброс `X-Forwarded-For`:
+4. В nginx обязательно `client_max_body_size 200m` и `X-Real-IP` / `X-Forwarded-For`,
+   равные `$remote_addr` (см. `deploy/nginx.conf.example`):
    первое нужно для загрузки видео, второе — чтобы ограничение частоты запросов
    считалось по посетителю, а не по всему сайту сразу.
 5. Без `BLOB_READ_WRITE_TOKEN` файлы пишутся в `public/uploads` — каталог должен лежать

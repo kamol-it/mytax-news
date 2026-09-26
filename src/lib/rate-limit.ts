@@ -1,3 +1,4 @@
+import { clientIpFromHeaders } from "@/lib/client-ip";
 import { prisma } from "@/lib/prisma";
 
 /**
@@ -52,17 +53,7 @@ export async function resetRateLimit(key: string): Promise<void> {
   await prisma.rateLimit.delete({ where: { key } }).catch(() => undefined);
 }
 
-/**
- * IP запроса. За реверс-прокси и на Vercel адрес приходит в заголовках;
- * при их отсутствии используем «unknown» — тогда лимит станет общим,
- * что для формы вопросов приемлемо.
- */
+/** IP запроса — см. clientIpFromHeaders о том, каким заголовкам можно верить. */
 export function clientIp(request: Request): string {
-  const forwarded = request.headers.get("x-forwarded-for");
-  if (forwarded) return forwarded.split(",")[0].trim().slice(0, 64);
-  return (
-    request.headers.get("x-real-ip")?.slice(0, 64) ??
-    request.headers.get("cf-connecting-ip")?.slice(0, 64) ??
-    "unknown"
-  );
+  return clientIpFromHeaders(request.headers);
 }

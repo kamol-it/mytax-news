@@ -5,16 +5,14 @@ import { redirect } from "next/navigation";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { setSessionCookie, signSession } from "@/lib/auth";
+import { clientIpFromHeaders } from "@/lib/client-ip";
 import { rateLimit, resetRateLimit } from "@/lib/rate-limit";
 
 export type LoginState = { error?: string };
 
 /** Адрес запроса из заголовков прокси — для лимита попыток входа. */
 async function requestIp(): Promise<string> {
-  const store = await headers();
-  const forwarded = store.get("x-forwarded-for");
-  if (forwarded) return forwarded.split(",")[0].trim().slice(0, 64);
-  return store.get("x-real-ip")?.slice(0, 64) ?? "unknown";
+  return clientIpFromHeaders(await headers());
 }
 
 export async function login(
