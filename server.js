@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports -- CommonJS: Passenger загружает файл через require */
 /**
  * Точка входа для хостингов с Passenger (cPanel → «Setup Node.js App»).
  *
