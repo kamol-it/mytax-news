@@ -6,7 +6,13 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { sessionTokenFor, setSessionCookie } from "@/lib/auth";
 import { clientIpFromHeaders } from "@/lib/client-ip";
-import { rateLimit, resetRateLimit } from "@/lib/rate-limit";
+import {
+  hasMark,
+  isRateLimited,
+  rateLimit,
+  resetRateLimit,
+  setMark,
+} from "@/lib/rate-limit";
 
 export type LoginState = { error?: string };
 
@@ -27,16 +33,31 @@ export async function login(
     return { error: "Введите email и пароль." };
   }
 
-  // Подбор пароля: не больше 10 попыток за 15 минут с адреса
-  // и не больше 5 попыток для одной учётной записи.
+  // Подбор пароля ограничиваем так, чтобы посторонний не мог заблокировать
+  // вход владельцу учётной записи:
+  // - с одного адреса — не больше 10 попыток за 15 минут;
+  // - для пары «email + адрес» — не больше 5 попыток за 15 минут;
+  // - если на учётную запись пришло больше 20 неудачных попыток за час
+  //   (подбор с многих адресов), вход открыт только с адресов, откуда
+  //   этот пользователь уже успешно входил за последние 30 дней.
   const ip = await requestIp();
+  const account = email.slice(0, 254);
+  const pairKey = `login-pair:${account}|${ip}`;
   const byIp = await rateLimit(`login-ip:${ip}`, 10, 900);
-  const byEmail = await rateLimit(`login-email:${email}`, 5, 900);
+  const byPair = await rateLimit(pairKey, 5, 900);
 
-  if (!byIp.allowed || !byEmail.allowed) {
-    const minutes = Math.ceil(Math.max(byIp.retryAfter, byEmail.retryAfter) / 60);
+  if (!byIp.allowed || !byPair.allowed) {
+    const minutes = Math.ceil(Math.max(byIp.retryAfter, byPair.retryAfter) / 60);
     return {
       error: `Слишком много попыток входа. Повторите через ${minutes} мин.`,
+    };
+  }
+
+  const failuresKey = `login-email:${account}`;
+  const knownKey = `login-known:${account}|${ip}`;
+  if ((await isRateLimited(failuresKey, 20)) && !(await hasMark(knownKey))) {
+    return {
+      error: "Слишком много попыток входа в эту учётную запись. Повторите позже.",
     };
   }
 
@@ -46,12 +67,14 @@ export async function login(
   const ok = await bcrypt.compare(password, hash);
 
   if (!user || !ok) {
+    await rateLimit(failuresKey, 20, 3600);
     return { error: "Неверный email или пароль." };
   }
 
   await Promise.all([
     resetRateLimit(`login-ip:${ip}`),
-    resetRateLimit(`login-email:${email}`),
+    resetRateLimit(pairKey),
+    setMark(knownKey, 30 * 86_400),
   ]);
 
   await setSessionCookie(await sessionTokenFor(user));

@@ -53,6 +53,29 @@ export async function resetRateLimit(key: string): Promise<void> {
   await prisma.rateLimit.delete({ where: { key } }).catch(() => undefined);
 }
 
+/** Достигнут ли лимит по ключу — без увеличения счётчика. */
+export async function isRateLimited(key: string, limit: number): Promise<boolean> {
+  try {
+    const existing = await prisma.rateLimit.findUnique({ where: { key } });
+    return Boolean(existing && existing.expiresAt > new Date() && existing.count >= limit);
+  } catch {
+    return false;
+  }
+}
+
+/** Отметка на время (например, «с этого адреса уже входили») в той же таблице. */
+export async function setMark(key: string, seconds: number): Promise<void> {
+  const expiresAt = new Date(Date.now() + seconds * 1000);
+  await prisma.rateLimit
+    .upsert({ where: { key }, update: { expiresAt }, create: { key, count: 0, expiresAt } })
+    .catch(() => undefined);
+}
+
+export async function hasMark(key: string): Promise<boolean> {
+  const existing = await prisma.rateLimit.findUnique({ where: { key } }).catch(() => null);
+  return Boolean(existing && existing.expiresAt > new Date());
+}
+
 /** IP запроса — см. clientIpFromHeaders о том, каким заголовкам можно верить. */
 export function clientIp(request: Request): string {
   return clientIpFromHeaders(request.headers);
