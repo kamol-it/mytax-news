@@ -3,7 +3,7 @@
 # DATABASE_URL="postgresql://mytax:mytax@localhost:5433/mytax?schema=public"
 services:
   postgres:
-    image: postgres:17-alpine
+    image: postgres:18-alpine
     container_name: mytax-pg
     restart: unless-stopped
     environment:
