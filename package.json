@@ -17,8 +17,8 @@
     "test": "tsx --test \"src/**/*.test.ts\""
   },
   "dependencies": {
-    "@prisma/adapter-pg": "^7.9.1",
-    "@prisma/client": "^7.9.1",
+    "@prisma/adapter-pg": "^7.10.0",
+    "@prisma/client": "^7.10.0",
     "@tiptap/extension-image": "^3.31.3",
     "@tiptap/extension-link": "^3.31.3",
     "@tiptap/pm": "^3.31.3",
@@ -27,10 +27,10 @@
     "@vercel/blob": "^2.7.0",
     "bcryptjs": "^3.0.3",
     "dotenv": "^17.4.2",
-    "jose": "^6.2.8",
+    "jose": "^6.2.12",
     "next": "16.3.6",
-    "react": "19.2.8",
-    "react-dom": "19.2.8",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
     "sanitize-html": "^2.17.7",
     "web-push": "^3.6.7"
   },
@@ -46,7 +46,7 @@
     "eslint-config-next": "16.3.6",
     "prisma": "^7.9.1",
     "tailwindcss": "^4",
-    "tsx": "^4.23.11",
+    "tsx": "^4.23.15",
     "typescript": "^5",
     "vercel": "^58.9.0"
   },
