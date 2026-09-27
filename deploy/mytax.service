@@ -18,7 +18,10 @@ EnvironmentFile=/var/www/mytax/.env
 Environment=NODE_ENV=production
 Environment=PORT=3000
 
-ExecStart=/usr/bin/npm start
+# Слушаем только локальный адрес: снаружи сайт доступен через nginx.
+# Если порт 3000 открыт в интернет, можно прислать поддельный X-Real-IP
+# в обход nginx и обойти ограничение частоты запросов.
+ExecStart=/usr/bin/npm start -- -H 127.0.0.1
 Restart=always
 RestartSec=5
 

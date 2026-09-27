@@ -2,15 +2,19 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { clearSessionCookie, getSession } from "@/lib/auth";
+import { clearSessionCookie, getSession, sessionTokenFor, setSessionCookie } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { sendPushToAll } from "@/lib/push";
-import { replyAsConsultant } from "@/app/[locale]/ask/actions";
+import { sendPushToAll, sendPushToQuestion } from "@/lib/push";
 import { SOCIAL_KEYS } from "@/lib/settings";
 import { removeFile } from "@/lib/storage";
 import { sanitizeHtml } from "@/lib/sanitize";
 import { slugify, uniqueSlug } from "@/lib/slug";
 
+/**
+ * getSession сверяет токен с базой: удалённый пользователь или токен,
+ * выданный до смены пароля, не проходят, а роль берётся из базы —
+ * понижение до редактора действует сразу, без ожидания конца сессии.
+ */
 async function requireSession() {
   const session = await getSession();
   if (!session) redirect("/admin/login");
@@ -341,7 +345,7 @@ export async function resetUserPassword(
   _prev: UserFormState,
   formData: FormData,
 ): Promise<UserFormState> {
-  await requireAdmin();
+  const session = await requireAdmin();
 
   const id = String(formData.get("id") ?? "");
   const password = String(formData.get("password") ?? "");
@@ -353,10 +357,12 @@ export async function resetUserPassword(
   if (!user) return { error: "Пользователь не найден." };
 
   const bcrypt = await import("bcryptjs");
-  await prisma.user.update({
+  // Новый хеш делает недействительными все сессии пользователя
+  const updated = await prisma.user.update({
     where: { id },
     data: { password: await bcrypt.hash(password, 10) },
   });
+  if (id === session.sub) await setSessionCookie(await sessionTokenFor(updated));
 
   revalidatePath("/admin/users");
   return { ok: `Пароль для ${user.email} изменён.` };
@@ -399,10 +405,12 @@ export async function changeOwnPassword(
     return { error: "Текущий пароль неверный." };
   }
 
-  await prisma.user.update({
+  const updated = await prisma.user.update({
     where: { id: user.id },
     data: { password: await bcrypt.hash(next, 10) },
   });
+  // Смена пароля завершает все прежние сессии; текущую выдаём заново.
+  await setSessionCookie(await sessionTokenFor(updated));
 
   return { ok: "Пароль изменён." };
 }
@@ -441,6 +449,40 @@ export async function sendTestPush(): Promise<void> {
 /* ---------------------------- вопросы консультанту --------------------------- */
 
 export type QuestionState = { error?: string; ok?: string };
+
+/**
+ * Запись ответа консультанта. Не экспортируется: экспорт из модуля
+ * "use server" становится публичным server action, а здесь нет проверки
+ * сессии — её делает answerQuestion.
+ */
+async function replyAsConsultant(
+  questionId: string,
+  authorName: string,
+  body: string,
+): Promise<void> {
+  const question = await prisma.question.findUnique({ where: { id: questionId } });
+  if (!question) return;
+
+  await prisma.$transaction([
+    prisma.questionMessage.create({
+      data: { questionId, author: "consultant", body, authorName },
+    }),
+    prisma.question.update({
+      where: { id: questionId },
+      data: { answered: true, lastMessageAt: new Date() },
+    }),
+  ]);
+
+  if (question.token) {
+    await sendPushToQuestion(question.token, {
+      title: "MYTAX: есть ответ на ваш вопрос",
+      body: body.slice(0, 140),
+      url: `${process.env.NEXT_PUBLIC_SITE_URL ?? ""}/${question.locale}/ask/${question.token}`,
+      tag: `mytax-answer-${question.token}`,
+    });
+    revalidatePath(`/${question.locale}/ask/${question.token}`);
+  }
+}
 
 /** Ответ консультанта в ветке обращения. */
 export async function answerQuestion(

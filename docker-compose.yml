@@ -10,8 +10,10 @@ services:
       POSTGRES_USER: mytax
       POSTGRES_PASSWORD: mytax
       POSTGRES_DB: mytax
+    # Только localhost: пароль mytax:mytax известен всем (репозиторий
+    # публичный), поэтому база не должна быть доступна из сети.
     ports:
-      - "5433:5432"
+      - "127.0.0.1:5433:5432"
     volumes:
       - mytax-pgdata:/var/lib/postgresql/data
     healthcheck:

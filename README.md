@@ -14,7 +14,7 @@ npm install
 docker compose up -d   # локальный PostgreSQL на порту 5433
 cp .env.example .env   # вписать DATABASE_URL и AUTH_SECRET
 npm run db:push        # создать схему
-npm run db:seed        # админ + рубрики + примеры новостей
+SEED_ADMIN_PASSWORD="$(openssl rand -base64 18)" npm run db:seed  # админ + рубрики + примеры новостей
 npm run dev
 ```
 
@@ -24,7 +24,9 @@ npm run dev
 
 Сайт: http://localhost:3000 (редирект на язык браузера) · Админка: http://localhost:3000/admin
 
-Демо-доступ после `db:seed`: `admin@mytax.uz` и пароль из `SEED_ADMIN_PASSWORD` (по умолчанию `mytax2026`) — **смените пароль перед публикацией сайта.**
+Вход после `db:seed`: email из `SEED_ADMIN_EMAIL` (по умолчанию `admin@mytax.uz`) и пароль
+из `SEED_ADMIN_PASSWORD`. Пароля по умолчанию нет: без `SEED_ADMIN_PASSWORD` (минимум 12 символов)
+seed завершается ошибкой. Если администратор уже есть в базе, seed его пароль не меняет.
 
 ## Переменные окружения
 
@@ -36,7 +38,8 @@ npm run dev
 | `AUTH_SECRET` | секрет для подписи сессий, минимум 16 символов (`openssl rand -hex 32`) |
 | `NEXT_PUBLIC_SITE_URL` | публичный адрес сайта, используется в sitemap и OG-метатегах |
 | `BLOB_READ_WRITE_TOKEN` | необязательно: если задан, загрузки идут в Vercel Blob вместо `public/uploads` |
-| `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` | необязательно: логин и пароль администратора для `db:seed` |
+| `SEED_ADMIN_EMAIL` | необязательно: email администратора для `db:seed` (по умолчанию `admin@mytax.uz`) |
+| `SEED_ADMIN_PASSWORD` | обязательно для `db:seed`: пароль администратора, не короче 12 символов |
 
 ## Что умеет админка
 
@@ -119,6 +122,12 @@ Vercel включает защиту деплоя (Vercel Authentication) зан
 командой `npm run deploy` — она разворачивает и сразу снимает защиту
 (`scripts/unprotect.mjs`). На своём домене защита не действует.
 
+> **Внимание:** `scripts/unprotect.mjs` отключает защиту для всего проекта,
+> включая все preview-деплои веток. Любой, кто узнает их адреса, откроет
+> неопубликованный код и данные. Когда сайт переедет на свой домен, уберите
+> вызов скрипта из `npm run deploy` и включите защиту в Vercel
+> (Project Settings → Deployment Protection).
+
 ## Развёртывание на своём сервере
 
 Пошаговая инструкция — в [DEPLOY.md](DEPLOY.md); готовые конфиги лежат в `deploy/`
@@ -127,7 +136,8 @@ Vercel включает защиту деплоя (Vercel Authentication) зан
 1. Node 20+, PostgreSQL 14+, nginx.
 2. `.env` с `DATABASE_URL`, `AUTH_SECRET`, `NEXT_PUBLIC_SITE_URL` (и ключами VAPID для push).
 3. `npm ci` → `npm run db:push` → `npm run db:seed` → `npm run build` → служба `npm start`.
-4. В nginx обязательно `client_max_body_size 200m` и проброс `X-Forwarded-For`:
+4. В nginx обязательно `client_max_body_size 200m` и `X-Real-IP` / `X-Forwarded-For`,
+   равные `$remote_addr` (см. `deploy/nginx.conf.example`):
    первое нужно для загрузки видео, второе — чтобы ограничение частоты запросов
    считалось по посетителю, а не по всему сайту сразу.
 5. Без `BLOB_READ_WRITE_TOKEN` файлы пишутся в `public/uploads` — каталог должен лежать

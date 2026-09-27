@@ -94,9 +94,35 @@ const PAGES = [
   },
 ];
 
+/** Старый демо-пароль был опубликован в репозитории — использовать его нельзя. */
+const FORBIDDEN_PASSWORDS = new Set(["mytax2026"]);
+const MIN_ADMIN_PASSWORD = 12;
+
+/**
+ * Пароль администратора берётся только из SEED_ADMIN_PASSWORD.
+ * Значения по умолчанию нет намеренно: репозиторий публичный, и любой
+ * пароль, записанный в коде, известен всем.
+ */
+function adminPassword(): string {
+  const password = process.env.SEED_ADMIN_PASSWORD;
+  if (!password) {
+    throw new Error(
+      "Задайте SEED_ADMIN_PASSWORD (не короче 12 символов), например: " +
+        'SEED_ADMIN_PASSWORD="$(openssl rand -base64 18)" npm run db:seed',
+    );
+  }
+  if (password.length < MIN_ADMIN_PASSWORD) {
+    throw new Error(`SEED_ADMIN_PASSWORD должен быть не короче ${MIN_ADMIN_PASSWORD} символов.`);
+  }
+  if (FORBIDDEN_PASSWORDS.has(password)) {
+    throw new Error("Этот пароль опубликован в репозитории — выберите другой SEED_ADMIN_PASSWORD.");
+  }
+  return password;
+}
+
 async function main() {
   const email = process.env.SEED_ADMIN_EMAIL ?? "admin@mytax.uz";
-  const password = process.env.SEED_ADMIN_PASSWORD ?? "mytax2026";
+  const password = adminPassword();
 
   const admin = await prisma.user.upsert({
     where: { email },
@@ -150,7 +176,7 @@ async function main() {
     });
   }
 
-  console.log(`Готово. Вход в админку: ${email} / ${password}`);
+  console.log(`Готово. Вход в админку: ${email} (пароль из SEED_ADMIN_PASSWORD).`);
 }
 
 main()

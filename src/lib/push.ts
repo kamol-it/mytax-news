@@ -1,5 +1,6 @@
 import webpush from "web-push";
 import { prisma } from "@/lib/prisma";
+import { isValidPushEndpoint } from "@/lib/push-endpoint";
 
 export function pushConfigured(): boolean {
   return Boolean(
@@ -54,10 +55,19 @@ async function sendPush(payload: PushPayload, filter: Filter) {
 
   await Promise.all(
     subscriptions.map(async (sub) => {
+      // Подписки, сохранённые до проверки адресов, могут вести куда угодно:
+      // на такие адреса не ходим и удаляем их.
+      if (!isValidPushEndpoint(sub.endpoint)) {
+        await prisma.pushSubscription.delete({ where: { id: sub.id } }).catch(() => undefined);
+        removed += 1;
+        return;
+      }
+
       try {
         await webpush.sendNotification(
           { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
           body,
+          { timeout: 10_000 },
         );
         sent += 1;
       } catch (error) {
