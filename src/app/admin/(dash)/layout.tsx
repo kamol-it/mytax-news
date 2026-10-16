@@ -65,7 +65,7 @@ export default async function AdminLayout({
         </div>
       </aside>
 
-      <div className="flex-1">
+      <div className="min-w-0 flex-1">
         {/* Мобильная шапка админки: клиент работает в основном с телефона */}
         <header className="sticky top-0 z-20 border-b border-line bg-surface sm:hidden">
           <div className="flex items-center gap-3 px-4 py-3">
