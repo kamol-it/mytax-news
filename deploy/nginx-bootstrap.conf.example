@@ -1,0 +1,41 @@
+# nginx для MYTAX.uz до выпуска сертификата: только HTTP.
+# Нужен, чтобы сайт открывался по IP и certbot мог пройти проверку домена.
+# После `certbot certonly --webroot` замените его на nginx.conf.example.
+
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+    server_name mytax.uz www.mytax.uz _;
+
+    client_max_body_size 200m;
+    client_body_timeout 300s;
+    proxy_read_timeout 300s;
+    proxy_send_timeout 300s;
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    location /_next/static/ {
+        alias /var/www/mytax/.next/static/;
+        access_log off;
+        expires 365d;
+        add_header Cache-Control "public, immutable";
+    }
+
+    location /uploads/ {
+        alias /var/www/mytax/public/uploads/;
+        access_log off;
+        expires 30d;
+        add_header X-Content-Type-Options "nosniff";
+    }
+
+    location / {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_http_version 1.1;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Host $host;
+    }
+}

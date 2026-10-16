@@ -21,7 +21,9 @@ Environment=PORT=3000
 # Слушаем только локальный адрес: снаружи сайт доступен через nginx.
 # Если порт 3000 открыт в интернет, можно прислать поддельный X-Real-IP
 # в обход nginx и обойти ограничение частоты запросов.
-ExecStart=/usr/bin/npm start -- -H 127.0.0.1
+# Next запускается напрямую, без npm: под ProtectSystem=strict npm не может
+# писать свой кеш и логи в домашний каталог.
+ExecStart=/usr/bin/node node_modules/next/dist/bin/next start -H 127.0.0.1
 Restart=always
 RestartSec=5
 
