@@ -39,11 +39,12 @@ export default async function AdminLayout({
           <Logo tone="dark" size="sm" />
         </Link>
 
-        <nav className="flex flex-col gap-1 text-sm">
+        <nav data-tour="nav" className="flex flex-col gap-1 text-sm">
           {nav.map((item) => (
             <Link
               key={item.href}
               href={item.href}
+              data-tour={`nav-${item.href.split("/")[2] ?? "home"}`}
               className="rounded px-3 py-2 text-white/75 transition hover:bg-white/10 hover:text-white"
             >
               {item.label}
@@ -54,7 +55,7 @@ export default async function AdminLayout({
         <div className="mt-auto border-t border-white/10 pt-4 text-xs text-white/60">
           <p className="font-semibold text-white/85">{session.name}</p>
           <p className="mb-3 truncate">{session.email}</p>
-          <Link href={siteHref} className="block hover:text-white">
+          <Link href={siteHref} data-tour="site" className="block hover:text-white">
             ↗ Открыть сайт
           </Link>
           <form action={logout} className="mt-2">
@@ -74,7 +75,7 @@ export default async function AdminLayout({
             </Link>
             <span className="truncate text-xs text-muted">{session.name}</span>
             <div className="ml-auto flex items-center gap-3 text-xs">
-              <Link href={siteHref} className="text-muted hover:text-accent">
+              <Link href={siteHref} data-tour="site" className="text-muted hover:text-accent">
                 ↗ сайт
               </Link>
               <form action={logout}>
@@ -84,11 +85,12 @@ export default async function AdminLayout({
               </form>
             </div>
           </div>
-          <nav className="flex gap-1 overflow-x-auto px-2 pb-2">
+          <nav data-tour="nav" className="flex gap-1 overflow-x-auto px-2 pb-2">
             {nav.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
+                data-tour={`nav-${item.href.split("/")[2] ?? "home"}`}
                 className="whitespace-nowrap rounded-lg bg-background px-3 py-2 text-sm font-medium text-foreground active:bg-line"
               >
                 {item.label}

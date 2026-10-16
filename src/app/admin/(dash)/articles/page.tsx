@@ -5,6 +5,7 @@ import { AdminPager, pageFromParam } from "@/components/admin/AdminPager";
 import { formatDate } from "@/lib/i18n";
 import { prisma } from "@/lib/prisma";
 import { deleteArticle, toggleArticlePublished } from "../../actions";
+import { Tour } from "@/components/admin/Tour";
 
 const PER_PAGE = 20;
 
@@ -44,17 +45,19 @@ export default async function ArticlesPage({
 
   return (
     <div>
+      <Tour id="articles" />
       <div className="mb-5 flex flex-wrap items-center gap-3">
         <h1 className="text-2xl font-black">Новости</h1>
         <Link
           href="/admin/articles/new"
+          data-tour="new-article"
           className="ml-auto rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white hover:bg-accent-hover"
         >
           + Новая новость
         </Link>
       </div>
 
-      <form className="mb-4 flex flex-wrap gap-2 text-sm">
+      <form data-tour="filter" className="mb-4 flex flex-wrap gap-2 text-sm">
         <input
           type="search"
           name="q"
@@ -84,7 +87,7 @@ export default async function ArticlesPage({
           <p className="p-4 text-sm text-muted">Ничего не найдено.</p>
         ) : (
           articles.map((a) => (
-            <div key={a.id} className="flex flex-wrap items-center gap-3 p-3">
+            <div key={a.id} data-tour="article-row" className="flex flex-wrap items-center gap-3 p-3">
               <div className="relative h-12 w-16 shrink-0 overflow-hidden rounded bg-background">
                 {a.coverImage ? (
                   <Image
@@ -115,7 +118,7 @@ export default async function ArticlesPage({
                 </p>
               </div>
 
-              <form action={toggleArticlePublished} className="ml-auto shrink-0">
+              <form action={toggleArticlePublished} data-tour="article-status" className="ml-auto shrink-0">
                 <input type="hidden" name="id" value={a.id} />
                 <button
                   type="submit"

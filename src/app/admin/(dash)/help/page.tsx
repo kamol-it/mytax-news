@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { tourStartUrls, tourTitles, type TourId } from "@/components/admin/tours";
 
 export const metadata = { title: "Справка — админ-панель MYTAX" };
 
@@ -321,6 +322,27 @@ export default function HelpPage() {
         <p className="mt-1 text-sm text-muted">
           Короткие инструкции по работе с админ-панелью. Нажмите на раздел, чтобы раскрыть.
         </p>
+      </div>
+
+      <div className="rounded-xl border border-line bg-surface p-4">
+        <h2 className="text-sm font-bold uppercase tracking-widest text-muted">
+          Интерактивное обучение
+        </h2>
+        <p className="mt-1 text-sm text-muted">
+          Подсказки прямо на экране: нужная кнопка подсвечивается, рядом — пояснение. На любой
+          странице его можно повторить кнопкой «✨ Обучение» в углу.
+        </p>
+        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+          {(Object.keys(tourTitles) as TourId[]).map((id) => (
+            <Link
+              key={id}
+              href={tourStartUrls[id]}
+              className="flex items-center gap-2 rounded-lg border border-line px-3 py-2.5 text-sm font-semibold transition hover:-translate-y-0.5 hover:border-accent hover:text-accent"
+            >
+              <span aria-hidden>▶</span> {tourTitles[id]}
+            </Link>
+          ))}
+        </div>
       </div>
 
       <div className="space-y-2">

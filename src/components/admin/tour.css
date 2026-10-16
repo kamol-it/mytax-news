@@ -1,0 +1,123 @@
+/* Оформление и анимация обучения в админке (поверх стилей driver.js) */
+
+.driver-popover.mytax-tour {
+  max-width: min(340px, calc(100vw - 32px));
+  border-radius: 16px;
+  padding: 18px 18px 14px;
+  background: var(--surface);
+  color: var(--foreground);
+  box-shadow: 0 20px 50px -12px rgb(12 66 120 / 0.45);
+  animation: tour-pop 0.38s cubic-bezier(0.2, 0.9, 0.3, 1.25);
+}
+
+.mytax-tour .driver-popover-title {
+  font-size: 17px;
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+.mytax-tour .driver-popover-description {
+  margin-top: 6px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.mytax-tour .driver-popover-progress-text {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.mytax-tour .driver-popover-footer button {
+  border: 0;
+  border-radius: 999px;
+  padding: 7px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  text-shadow: none;
+  background: var(--background);
+  color: var(--foreground);
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.mytax-tour .driver-popover-footer button:hover {
+  transform: translateY(-1px);
+}
+
+.mytax-tour .driver-popover-footer .driver-popover-next-btn {
+  background: var(--accent);
+  color: #fff;
+}
+
+.mytax-tour .driver-popover-footer .driver-popover-next-btn:hover {
+  background: var(--accent-hover);
+}
+
+.mytax-tour .driver-popover-close-btn {
+  color: var(--muted);
+}
+
+.mytax-tour .driver-popover-arrow-side-left.driver-popover-arrow { border-left-color: var(--surface); }
+.mytax-tour .driver-popover-arrow-side-right.driver-popover-arrow { border-right-color: var(--surface); }
+.mytax-tour .driver-popover-arrow-side-top.driver-popover-arrow { border-top-color: var(--surface); }
+.mytax-tour .driver-popover-arrow-side-bottom.driver-popover-arrow { border-bottom-color: var(--surface); }
+
+/* Пульсирующая рамка вокруг подсвеченного элемента */
+.driver-active .driver-active-element {
+  animation: tour-pulse 1.8s ease-out infinite;
+  border-radius: 10px;
+}
+
+/* Кнопка «Обучение» мягко покачивается, пока её ни разу не нажимали */
+.tour-fab {
+  animation: tour-float 3s ease-in-out infinite;
+}
+.driver-active .tour-fab {
+  animation: none;
+}
+/* Во время обучения кнопка не мешает — кроме шага, где показываем её саму */
+.driver-active .tour-fab:not(.driver-active-element) {
+  opacity: 0;
+  pointer-events: none;
+}
+
+@keyframes tour-pop {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes tour-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgb(225 29 29 / 0.55);
+  }
+  70% {
+    box-shadow: 0 0 0 12px rgb(225 29 29 / 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgb(225 29 29 / 0);
+  }
+}
+
+@keyframes tour-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .driver-popover.mytax-tour,
+  .driver-active .driver-active-element,
+  .tour-fab {
+    animation: none;
+  }
+}

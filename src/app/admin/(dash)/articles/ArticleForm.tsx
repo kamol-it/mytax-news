@@ -6,6 +6,7 @@ import { saveArticle, type ArticleFormState } from "../../actions";
 import { UploadField } from "./UploadField";
 import { RichTextEditor } from "@/components/admin/RichTextEditor";
 import { Hint } from "@/components/admin/Hint";
+import { Tour } from "@/components/admin/Tour";
 import { locales, localeNames, type Locale } from "@/lib/i18n";
 
 export type ArticleFormValues = {
@@ -53,6 +54,7 @@ export function ArticleForm({
   const [video, setVideo] = useState(values.videoUrl ?? "");
   return (
     <form action={formAction} className="space-y-6">
+      <Tour id="article" />
       {values.id ? <input type="hidden" name="id" value={values.id} /> : null}
 
       <div className="flex flex-wrap items-center gap-3">
@@ -68,6 +70,7 @@ export function ArticleForm({
         <button
           type="submit"
           disabled={pending}
+          data-tour="save"
           className="ml-auto hidden rounded-lg bg-accent px-5 py-2 text-sm font-semibold text-white hover:bg-accent-hover disabled:opacity-60 sm:block"
         >
           {pending ? "Сохраняем…" : "Сохранить"}
@@ -81,7 +84,7 @@ export function ArticleForm({
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_280px]">
         <div className="space-y-4">
           {/* Языковые вкладки */}
-          <div className="flex gap-1 border-b border-line">
+          <div data-tour="lang-tabs" className="flex gap-1 border-b border-line">
             {locales.map((l) => (
               <button
                 key={l}
@@ -106,7 +109,7 @@ export function ArticleForm({
             const s = suffix(l);
             return (
               <div key={l} className={tab === l ? "space-y-4" : "hidden"}>
-                <label className="block">
+                <label data-tour="title" className="block">
                   <span className="mb-1 block text-sm font-medium">Заголовок ({l})</span>
                   <input
                     name={`title${s}`}
@@ -115,7 +118,7 @@ export function ArticleForm({
                   />
                 </label>
 
-                <label className="block">
+                <label data-tour="excerpt" className="block">
                   <span className="mb-1 block text-sm font-medium">Анонс ({l})</span>
                   <textarea
                     name={`excerpt${s}`}
@@ -129,7 +132,7 @@ export function ArticleForm({
                   </Hint>
                 </label>
 
-                <div>
+                <div data-tour="editor">
                   <span className="mb-1 block text-sm font-medium">Текст ({l})</span>
                   <RichTextEditor
                     name={`body${s}`}
@@ -153,7 +156,7 @@ export function ArticleForm({
             <h2 className="mb-3 text-sm font-bold uppercase tracking-widest text-muted">
               Публикация
             </h2>
-            <label className="flex items-center gap-2 text-sm">
+            <label data-tour="publish" className="flex items-center gap-2 text-sm">
               <input
                 type="checkbox"
                 name="published"
@@ -163,7 +166,7 @@ export function ArticleForm({
               Опубликовать
             </label>
             <Hint>Без галочки новость сохранится черновиком и не появится на сайте.</Hint>
-            <label className="mt-2 flex items-center gap-2 text-sm">
+            <label data-tour="push" className="mt-2 flex items-center gap-2 text-sm">
               <input
                 type="checkbox"
                 name="sendPush"
@@ -174,7 +177,7 @@ export function ArticleForm({
             <Hint more="publish">
               Уйдёт всем подписчикам сразу при сохранении. Только для важных новостей.
             </Hint>
-            <label className="mt-2 flex items-center gap-2 text-sm">
+            <label data-tour="featured" className="mt-2 flex items-center gap-2 text-sm">
               <input
                 type="checkbox"
                 name="featured"
@@ -185,7 +188,7 @@ export function ArticleForm({
             </label>
             <Hint>Закрепляет первой на главной. Снимайте отметку со старых.</Hint>
 
-            <label className="mt-4 block">
+            <label data-tour="category" className="mt-4 block">
               <span className="mb-1 block text-sm font-medium">Рубрика</span>
               <select
                 name="categoryId"
@@ -213,7 +216,7 @@ export function ArticleForm({
             </label>
           </div>
 
-          <div className="rounded-xl border border-line bg-surface p-4">
+          <div data-tour="cover" className="rounded-xl border border-line bg-surface p-4">
             <h2 className="mb-3 text-sm font-bold uppercase tracking-widest text-muted">
               Обложка
             </h2>
@@ -243,7 +246,7 @@ export function ArticleForm({
             ) : null}
           </div>
 
-          <div className="rounded-xl border border-line bg-surface p-4">
+          <div data-tour="video" className="rounded-xl border border-line bg-surface p-4">
             <h2 className="mb-3 text-sm font-bold uppercase tracking-widest text-muted">
               Видео
             </h2>
@@ -278,6 +281,7 @@ export function ArticleForm({
         <button
           type="submit"
           disabled={pending}
+          data-tour="save"
           className="w-full rounded-lg bg-accent px-5 py-3 font-semibold text-white disabled:opacity-60"
         >
           {pending ? "Сохраняем…" : "Сохранить"}
