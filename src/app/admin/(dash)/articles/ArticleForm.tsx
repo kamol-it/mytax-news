@@ -78,7 +78,7 @@ export function ArticleForm({
         <p className="rounded-lg bg-accent/10 px-3 py-2 text-sm text-accent">{state.error}</p>
       ) : null}
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_280px]">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_280px]">
         <div className="space-y-4">
           {/* Языковые вкладки */}
           <div className="flex gap-1 border-b border-line">
