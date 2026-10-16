@@ -5,6 +5,7 @@ import Link from "next/link";
 import { saveArticle, type ArticleFormState } from "../../actions";
 import { UploadField } from "./UploadField";
 import { RichTextEditor } from "@/components/admin/RichTextEditor";
+import { Hint } from "@/components/admin/Hint";
 import { locales, localeNames, type Locale } from "@/lib/i18n";
 
 export type ArticleFormValues = {
@@ -61,6 +62,9 @@ export function ArticleForm({
         <Link href="/admin/articles" className="text-sm text-muted hover:text-accent">
           ← к списку
         </Link>
+        <Link href="/admin/help#news" className="text-sm text-muted hover:text-accent">
+          ? Как добавить новость
+        </Link>
         <button
           type="submit"
           disabled={pending}
@@ -93,6 +97,10 @@ export function ArticleForm({
               </button>
             ))}
           </div>
+          <Hint more="languages">
+            Достаточно одного языка: пустые подставятся из заполненного. Перевод заголовка и
+            анонса заметно помогает читателям.
+          </Hint>
 
           {locales.map((l) => {
             const s = suffix(l);
@@ -115,6 +123,10 @@ export function ArticleForm({
                     defaultValue={values[`excerpt${s}` as keyof ArticleFormValues] as string ?? ""}
                     className="w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm focus:border-accent focus:outline-none"
                   />
+                  <Hint>
+                    1–2 предложения о сути. Видны в ленте, под заголовком и в превью ссылки в
+                    Telegram.
+                  </Hint>
                 </label>
 
                 <div>
@@ -125,6 +137,10 @@ export function ArticleForm({
                     articleId={values.id}
                     placeholder="Текст новости…"
                   />
+                  <Hint more="editor">
+                    Разбивайте текст подзаголовками H2. Текст из Word и Telegram можно вставлять
+                    как есть.
+                  </Hint>
                 </div>
               </div>
             );
@@ -146,6 +162,7 @@ export function ArticleForm({
               />
               Опубликовать
             </label>
+            <Hint>Без галочки новость сохранится черновиком и не появится на сайте.</Hint>
             <label className="mt-2 flex items-center gap-2 text-sm">
               <input
                 type="checkbox"
@@ -154,6 +171,9 @@ export function ArticleForm({
               />
               Отправить push-уведомление
             </label>
+            <Hint more="publish">
+              Уйдёт всем подписчикам сразу при сохранении. Только для важных новостей.
+            </Hint>
             <label className="mt-2 flex items-center gap-2 text-sm">
               <input
                 type="checkbox"
@@ -163,6 +183,7 @@ export function ArticleForm({
               />
               Главная новость
             </label>
+            <Hint>Закрепляет первой на главной. Снимайте отметку со старых.</Hint>
 
             <label className="mt-4 block">
               <span className="mb-1 block text-sm font-medium">Рубрика</span>
@@ -188,6 +209,7 @@ export function ArticleForm({
                 placeholder="сгенерируется автоматически"
                 className="w-full rounded-lg border border-line bg-surface px-3 py-2 font-mono text-xs focus:border-accent focus:outline-none"
               />
+              <Hint>После публикации не меняйте: старые ссылки перестанут работать.</Hint>
             </label>
           </div>
 
@@ -212,6 +234,7 @@ export function ArticleForm({
                 setCoverSize({ width: 0, height: 0 });
               }}
             />
+            <Hint more="media">JPG, PNG или WebP до 10 МБ, лучше горизонтальная 16:9.</Hint>
             {coverSize.height > coverSize.width && coverSize.width > 0 ? (
               <p className="mt-2 text-xs text-muted">
                 Вертикальная картинка: в лентах покажется верхняя часть, на странице
@@ -233,6 +256,7 @@ export function ArticleForm({
               onUploaded={(url) => setVideo(url)}
               onClear={() => setVideo("")}
             />
+            <Hint more="media">Файл MP4 или MOV до 100 МБ. Длинные ролики — через YouTube.</Hint>
             <label className="mt-3 block">
               <span className="mb-1 block text-xs font-medium text-muted">
                 …или ссылка на YouTube

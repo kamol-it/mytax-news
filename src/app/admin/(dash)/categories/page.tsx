@@ -1,6 +1,7 @@
 import { ConfirmSubmit } from "@/components/ConfirmSubmit";
 import { prisma } from "@/lib/prisma";
 import { deleteCategory, saveCategory } from "../../actions";
+import { Hint } from "@/components/admin/Hint";
 
 export const metadata = { title: "Рубрики" };
 
@@ -27,6 +28,10 @@ export default async function CategoriesPage() {
           <input name="nameEn" placeholder="Name (en)" className={field} />
           <input name="position" type="number" placeholder="Порядок" className={field} />
         </div>
+        <Hint more="categories">
+          Рубрики — пункты верхнего меню сайта. Порядок: меньше число — левее. При удалении
+          рубрики новости остаются на сайте.
+        </Hint>
         <button
           type="submit"
           className="mt-3 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white hover:bg-accent-hover"

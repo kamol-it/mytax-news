@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { Logo } from "@/components/Logo";
 import { logout } from "../actions";
+import { adminHost } from "@/lib/admin-host";
 
 export const metadata = { title: "Админ-панель MYTAX" };
 
@@ -15,6 +16,7 @@ const nav = [
   { href: "/admin/media", label: "Медиафайлы" },
   { href: "/admin/users", label: "Пользователи" },
   { href: "/admin/settings", label: "Настройки" },
+  { href: "/admin/help", label: "Справка" },
 ];
 
 export default async function AdminLayout({
@@ -26,6 +28,9 @@ export default async function AdminLayout({
   // выданная до смены пароля, сюда не проходят.
   const session = await getSession();
   if (!session) redirect("/admin/login");
+
+  // На поддомене админки «/» снова ведёт в админку — сайт открываем по его адресу
+  const siteHref = adminHost() ? (process.env.NEXT_PUBLIC_SITE_URL ?? "/") : "/";
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -49,7 +54,7 @@ export default async function AdminLayout({
         <div className="mt-auto border-t border-white/10 pt-4 text-xs text-white/60">
           <p className="font-semibold text-white/85">{session.name}</p>
           <p className="mb-3 truncate">{session.email}</p>
-          <Link href="/" className="block hover:text-white">
+          <Link href={siteHref} className="block hover:text-white">
             ↗ Открыть сайт
           </Link>
           <form action={logout} className="mt-2">
@@ -69,7 +74,7 @@ export default async function AdminLayout({
             </Link>
             <span className="truncate text-xs text-muted">{session.name}</span>
             <div className="ml-auto flex items-center gap-3 text-xs">
-              <Link href="/" className="text-muted hover:text-accent">
+              <Link href={siteHref} className="text-muted hover:text-accent">
                 ↗ сайт
               </Link>
               <form action={logout}>
