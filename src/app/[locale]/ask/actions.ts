@@ -8,6 +8,7 @@ import { prisma } from "@/lib/prisma";
 import { newToken } from "@/lib/questions";
 import { sendPushToAdmins } from "@/lib/push";
 import { rateLimit } from "@/lib/rate-limit";
+import { adminUrl } from "@/lib/admin-host";
 
 export type AskState = { error?: string; token?: string };
 
@@ -65,7 +66,7 @@ export async function submitQuestion(
   await sendPushToAdmins({
     title: "Новый вопрос консультанту",
     body: `${name}: ${body.slice(0, 120)}`,
-    url: `${process.env.NEXT_PUBLIC_SITE_URL ?? ""}/admin/questions`,
+    url: adminUrl("/admin/questions"),
     tag: "mytax-question",
   });
 
@@ -112,7 +113,7 @@ export async function replyAsVisitor(
   await sendPushToAdmins({
     title: "Ответ посетителя в обращении",
     body: `${question.name}: ${body.slice(0, 120)}`,
-    url: `${process.env.NEXT_PUBLIC_SITE_URL ?? ""}/admin/questions`,
+    url: adminUrl("/admin/questions"),
     tag: "mytax-question",
   });
 
