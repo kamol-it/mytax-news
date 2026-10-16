@@ -4,6 +4,7 @@ import { useActionState, useState } from "react";
 import Link from "next/link";
 import { savePage, type PageFormState } from "../../actions";
 import { RichTextEditor } from "@/components/admin/RichTextEditor";
+import { Hint } from "@/components/admin/Hint";
 import { locales, localeNames, type Locale } from "@/lib/i18n";
 
 export type PageFormValues = {
@@ -90,6 +91,10 @@ export function PageForm({ values = {} }: { values?: PageFormValues }) {
           />
         </label>
       </div>
+      <Hint more="pages">
+        «В верхнем меню» — ссылка в шапке, без отметки — только в подвале. Порядок: меньше число —
+        левее.
+      </Hint>
 
       <div className="flex gap-1 border-b border-line">
         {locales.map((l) => (
