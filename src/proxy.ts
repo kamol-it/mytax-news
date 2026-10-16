@@ -17,15 +17,14 @@ export async function proxy(request: NextRequest) {
   if (byHost.action === "redirect") {
     return NextResponse.redirect(new URL(byHost.url, request.url));
   }
-  if (byHost.action === "not-found") {
-    // Несуществующая страница внутри сайта: обычная 404 с шапкой и подвалом
-    const url = request.nextUrl.clone();
-    url.pathname = `/${defaultLocale}/404`;
-    return NextResponse.rewrite(url, { status: 404 });
-  }
+  // На основном домене /admin — обычный несуществующий адрес: дальше он получит
+  // префикс локали (/ru/admin) и страницу 404, как любая опечатка в адресе.
+  // Rewrite здесь не годится: за nginx Next проксирует его на https://localhost
+  // и падает с EPROTO.
+  const adminHere = byHost.action !== "not-found";
 
   // 1. Админка: всё кроме /admin/login требует валидную сессию.
-  if (pathname.startsWith("/admin")) {
+  if (adminHere && pathname.startsWith("/admin")) {
     if (pathname === "/admin/login") return NextResponse.next();
 
     const session = await verifySession(
