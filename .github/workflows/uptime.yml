@@ -1,0 +1,43 @@
+# Мониторинг доступности mytax.uz: каждые 10 минут проверяет сайт, админку и
+# сертификаты на сервере. Сбой — issue с меткой uptime (GitHub пришлёт письмо)
+# и сообщение в Telegram, если заданы секреты. Подробности — DEPLOY.md, «Мониторинг».
+name: Uptime
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: uptime
+  cancel-in-progress: false
+
+env:
+  SITE_URL: https://mytax.uz/ru
+  SITE_TEXT: MYTAX
+  ADMIN_URL: https://in.mytax.uz/admin/login
+  # Сертификаты Let's Encrypt на самом сервере (за Cloudflare снаружи их не видно)
+  ORIGIN_IP: 198.163.196.123
+  CERT_HOSTS: mytax.uz in.mytax.uz
+  CERT_WARN_DAYS: 14
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github/scripts
+      - name: Проверка доступности
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: bash .github/scripts/uptime.sh
