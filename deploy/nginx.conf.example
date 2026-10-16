@@ -1,12 +1,14 @@
 # nginx для MYTAX.uz: HTTPS наружу, Node на 127.0.0.1:3000 внутри.
 # Скопировать в /etc/nginx/sites-available/mytax.uz и включить символьной ссылкой.
+# Ставится ПОСЛЕ выпуска сертификата: до этого используйте nginx-bootstrap.conf.example,
+# иначе nginx -t упадёт на отсутствующих файлах сертификата.
 
 server {
-    listen 80;
-    listen [::]:80;
+    listen 80 default_server;
+    listen [::]:80 default_server;
     server_name mytax.uz www.mytax.uz;
 
-    # certbot подставит сюда редирект на HTTPS после выпуска сертификата
+    # Проверка Let's Encrypt при продлении сертификата (certbot --webroot)
     location /.well-known/acme-challenge/ {
         root /var/www/certbot;
     }
@@ -17,9 +19,10 @@ server {
 }
 
 server {
-    listen 443 ssl;
-    listen [::]:443 ssl;
-    http2 on;
+    # Синтаксис для nginx 1.24 из Ubuntu 24.04: отдельная директива `http2 on;`
+    # появилась только в 1.25.1, на 1.24 конфиг с ней не проходит nginx -t.
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
     server_name mytax.uz www.mytax.uz;
 
     ssl_certificate     /etc/letsencrypt/live/mytax.uz/fullchain.pem;
@@ -28,6 +31,11 @@ server {
     # Загрузка видео: без этого файлы больше 1 МБ отбиваются самим nginx
     client_max_body_size 200m;
     client_body_timeout 300s;
+
+    # За Cloudflare проверка продления может прийти уже по https
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
 
     # Ответ Next.js может идти долго при первой сборке страницы
     proxy_read_timeout 300s;

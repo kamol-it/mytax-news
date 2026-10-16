@@ -23,6 +23,17 @@ sudo apt install -y nodejs
 node -v   # должно быть v22.x
 ```
 
+Базовая защита сервера. Вход только по ключу включайте, когда ключ уже
+установлен (`ssh-copy-id`) и вход по нему проверен, иначе доступ пропадёт:
+
+```bash
+sudo apt install -y ufw fail2ban unattended-upgrades
+sudo ufw allow OpenSSH && sudo ufw allow "Nginx Full" && sudo ufw --force enable
+printf "PasswordAuthentication no\nKbdInteractiveAuthentication no\nPermitRootLogin prohibit-password\n" \
+  | sudo tee /etc/ssh/sshd_config.d/00-mytax.conf
+sudo sshd -t && sudo systemctl reload ssh
+```
+
 ## 2. База данных
 
 ```bash
@@ -130,14 +141,31 @@ sudo systemctl status mytax
 
 ## 7. nginx и HTTPS
 
-```bash
-sudo cp /var/www/mytax/deploy/nginx.conf.example /etc/nginx/sites-available/mytax.uz
-sudo ln -s /etc/nginx/sites-available/mytax.uz /etc/nginx/sites-enabled/
-sudo nginx -t && sudo systemctl reload nginx
+Сначала временный конфиг только с HTTP: основной ссылается на файлы
+сертификата, которых ещё нет, и с ним `nginx -t` не пройдёт.
 
-sudo apt install -y certbot python3-certbot-nginx
-sudo certbot --nginx -d mytax.uz -d www.mytax.uz
+```bash
+sudo mkdir -p /var/www/certbot
+sudo cp /var/www/mytax/deploy/nginx-bootstrap.conf.example /etc/nginx/sites-available/mytax.uz
+sudo ln -s /etc/nginx/sites-available/mytax.uz /etc/nginx/sites-enabled/
+sudo rm -f /etc/nginx/sites-enabled/default
+sudo nginx -t && sudo systemctl reload nginx
 ```
+
+Когда домен указывает на сервер, выпустите сертификат и поставьте основной
+конфиг:
+
+```bash
+sudo apt install -y certbot
+sudo certbot certonly --webroot -w /var/www/certbot -d mytax.uz -d www.mytax.uz
+sudo cp /var/www/mytax/deploy/nginx.conf.example /etc/nginx/sites-available/mytax.uz
+echo "deploy-hook = systemctl reload nginx" | sudo tee -a /etc/letsencrypt/cli.ini
+sudo nginx -t && sudo systemctl reload nginx
+sudo certbot renew --dry-run   # проверка автопродления
+```
+
+Сертификат продлевается сам (`certbot.timer`), после продления nginx
+перечитывает его через `deploy-hook`.
 
 Два параметра в конфиге принципиальны:
 
@@ -151,6 +179,41 @@ sudo certbot --nginx -d mytax.uz -d www.mytax.uz
   Приложение берёт `X-Real-IP`, а без него — последний адрес из
   `X-Forwarded-For`. Node должен слушать только 127.0.0.1, чтобы запросы
   с поддельными заголовками не приходили в обход nginx.
+
+### Если сайт за Cloudflare
+
+С включённым проксированием (оранжевое облако) все запросы приходят с адресов
+Cloudflare, и `$remote_addr` без доработки станет адресом Cloudflare: лимит
+снова окажется общим для всех. Скрипт `deploy/cloudflare-realip.sh` создаёт
+`/etc/nginx/conf.d/cloudflare-realip.conf`: nginx доверяет заголовку
+`CF-Connecting-IP` только с адресов Cloudflare и подставляет из него
+настоящий IP в `$remote_addr`. Остальной конфиг менять не нужно.
+
+```bash
+sudo install -m 755 /var/www/mytax/deploy/cloudflare-realip.sh /usr/local/bin/
+sudo /usr/local/bin/cloudflare-realip.sh
+# Cloudflare изредка меняет свои диапазоны — обновляем список раз в неделю
+echo "17 4 * * 1 root /usr/local/bin/cloudflare-realip.sh" | sudo tee /etc/cron.d/cloudflare-realip
+```
+
+В панели Cloudflare:
+
+- **DNS:** записи `A` для `@` и `www` на IP сервера, статус **Proxied**.
+  Почтовые записи (`mail`, `MX`, SPF/DKIM/DMARC) оставьте **DNS only**: через
+  прокси Cloudflare почта не ходит. Если почта живёт на другом хостинге,
+  `mail` должна быть записью `A` на его IP, а не `CNAME` на основной домен,
+  иначе почта уйдёт на сервер сайта.
+- **SSL/TLS:** режим **Full (strict)**. Сертификат Let's Encrypt на сервере
+  выпускается и продлевается через прокси, отдельный Origin-сертификат не нужен.
+- **Bot Fight Mode** не включайте: он может блокировать запросы service worker
+  и чата консультанта.
+
+Ограничение тарифа Free: запрос не больше **100 МБ**. Видео крупнее этого через
+Cloudflare не загрузится, такие ролики выкладывайте на YouTube и вставляйте
+ссылкой.
+
+Проверить, что nginx видит настоящий IP: откройте сайт и сравните свой адрес
+с первым полем в `sudo tail -1 /var/log/nginx/access.log`.
 
 ## 8. Проверка
 
@@ -207,11 +270,24 @@ cd /var/www/mytax && ./deploy/update.sh
 
 ## Резервные копии
 
-Копировать нужно и базу, и файлы — по отдельности они бесполезны:
+Копировать нужно и базу, и файлы — по отдельности они бесполезны.
+Скрипт `deploy/mytax-backup.sh` делает обе копии в `/var/backups/mytax`
+и хранит последние 14 дней:
 
 ```bash
-pg_dump -U mytax mytax | gzip > /backup/mytax-$(date +%F).sql.gz
-tar czf /backup/uploads-$(date +%F).tar.gz -C /var/www/mytax/public uploads
+sudo install -m 755 /var/www/mytax/deploy/mytax-backup.sh /usr/local/bin/
+echo "30 3 * * * root /usr/local/bin/mytax-backup.sh" | sudo tee /etc/cron.d/mytax-backup
+sudo /usr/local/bin/mytax-backup.sh && ls -l /var/backups/mytax
+```
+
+Копии лежат на том же сервере, поэтому от потери самого сервера не спасают:
+включите бэкапы или снапшоты у провайдера либо периодически забирайте каталог
+к себе (`rsync`/`scp`).
+
+Восстановление базы из копии:
+
+```bash
+gunzip -c /var/backups/mytax/db-ДАТА.sql.gz | sudo -u postgres psql -d mytax
 ```
 
 ## Возможные проблемы
@@ -223,3 +299,8 @@ tar czf /backup/uploads-$(date +%F).tar.gz -C /var/www/mytax/public uploads
 | «Не задана строка подключения к базе» при сборке | нет `DATABASE_URL` в `.env` или файл недоступен пользователю `mytax` |
 | Вход в админку не сохраняется | сайт открыт по http: cookie сессии выставляется с флагом `Secure` |
 | Сборка падает по памяти | добавьте swap: 2 ГБ достаточно |
+| `unknown directive "http2"` при `nginx -t` | nginx старше 1.25.1: используйте `listen 443 ssl http2;` вместо `http2 on;` |
+| `nginx -t` ругается на отсутствующий сертификат | основной конфиг поставлен до выпуска сертификата — сначала `nginx-bootstrap.conf.example` |
+| Ошибка 521/525 от Cloudflare | на сервере не слушается 443 или нет сертификата, а в Cloudflare стоит Full (strict) |
+| За Cloudflare лимит срабатывает на всех сразу | не подключён `cloudflare-realip.conf`, nginx видит адреса Cloudflare |
+| Домен «не найден» сразу после настройки DNS | кеш DNS на компьютере или в браузере: `sudo dscacheutil -flushcache` (macOS), перезапуск браузера |
