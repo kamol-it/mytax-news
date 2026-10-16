@@ -1,9 +1,28 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { defaultLocale, isLocale, locales } from "@/lib/i18n";
 import { SESSION_COOKIE, verifySession } from "@/lib/session";
+import { adminHost, routeByHost } from "@/lib/admin-host";
 
 export async function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
+
+  // 0. Поддомен админки (ADMIN_HOST): админка только там, на основном домене её нет.
+  const byHost = routeByHost({
+    host: request.headers.get("host"),
+    pathname,
+    search,
+    adminHost: adminHost(),
+    siteUrl: process.env.NEXT_PUBLIC_SITE_URL,
+  });
+  if (byHost.action === "redirect") {
+    return NextResponse.redirect(new URL(byHost.url, request.url));
+  }
+  if (byHost.action === "not-found") {
+    // Несуществующая страница внутри сайта: обычная 404 с шапкой и подвалом
+    const url = request.nextUrl.clone();
+    url.pathname = `/${defaultLocale}/404`;
+    return NextResponse.rewrite(url, { status: 404 });
+  }
 
   // 1. Админка: всё кроме /admin/login требует валидную сессию.
   if (pathname.startsWith("/admin")) {

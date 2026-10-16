@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { newToken } from "@/lib/questions";
 import { sendPushToAdmins } from "@/lib/push";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
+import { adminUrl } from "@/lib/admin-host";
 
 const MAX_BODY = 4000;
 
@@ -57,7 +58,7 @@ export async function POST(request: Request) {
   await sendPushToAdmins({
     title: "Новый вопрос консультанту",
     body: `${name}: ${body.slice(0, 120)}`,
-    url: `${process.env.NEXT_PUBLIC_SITE_URL ?? ""}/admin/questions`,
+    url: adminUrl("/admin/questions"),
     tag: "mytax-question",
   });
 
