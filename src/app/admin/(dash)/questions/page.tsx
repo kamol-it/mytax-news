@@ -13,6 +13,7 @@ import { AnswerForm } from "./AnswerForm";
 import { AdminPushButton } from "./AdminPushButton";
 import { ChatAutoRefresh } from "./ChatAutoRefresh";
 import { ScrollToBottom } from "./ScrollToBottom";
+import { Tour } from "@/components/admin/Tour";
 
 export const metadata = { title: "Вопросы консультанту" };
 export const dynamic = "force-dynamic";
@@ -59,11 +60,13 @@ export default async function QuestionsPage({
 
   return (
     <div className="-mx-4 -my-5 sm:-my-6">
+      <Tour id="questions" />
       <ChatAutoRefresh />
 
       <div className="flex h-[calc(100vh-8.5rem)] flex-col sm:h-[calc(100vh-3.25rem)] lg:grid lg:grid-cols-[300px_1fr]">
         {/* Список обращений */}
         <aside
+          data-tour="q-list"
           className={`flex min-h-0 flex-col border-line bg-surface lg:border-r ${
             params.id ? "hidden lg:flex" : "flex"
           }`}
@@ -78,7 +81,7 @@ export default async function QuestionsPage({
             >
               без ответа: {openCount}
             </Link>
-            <div className="w-full">
+            <div data-tour="q-push" className="w-full">
               <AdminPushButton />
             </div>
           </div>
@@ -135,7 +138,7 @@ export default async function QuestionsPage({
         </aside>
 
         {/* Переписка */}
-        <section className={`flex min-h-0 flex-col ${params.id ? "flex" : "hidden lg:flex"}`}>
+        <section data-tour="q-chat" className={`flex min-h-0 flex-col ${params.id ? "flex" : "hidden lg:flex"}`}>
           {!selected ? (
             <div className="flex flex-1 items-center justify-center p-6 text-sm text-muted">
               Выберите обращение слева.
@@ -167,7 +170,7 @@ export default async function QuestionsPage({
                   </p>
                 </div>
 
-                <div className="ml-auto flex flex-wrap items-center gap-2">
+                <div data-tour="q-actions" className="ml-auto flex flex-wrap items-center gap-2">
                   <form action={toggleQuestionAnswered}>
                     <input type="hidden" name="id" value={selected.id} />
                     <button
@@ -255,7 +258,7 @@ export default async function QuestionsPage({
                 <ScrollToBottom trigger={`${selected.id}-${messages.length}`} />
               </div>
 
-              <footer className="border-t border-line bg-surface px-3 py-2.5">
+              <footer data-tour="q-answer" className="border-t border-line bg-surface px-3 py-2.5">
                 {selected.closed ? (
                   <p className="text-sm text-muted">Обращение закрыто.</p>
                 ) : (

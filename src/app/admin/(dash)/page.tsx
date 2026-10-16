@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { formatDate } from "@/lib/i18n";
+import { Tour } from "@/components/admin/Tour";
 
 /** Границу «за 7 дней» считаем вне рендера: правило чистоты компонентов. */
 function weekAgoDate(): Date {
@@ -61,17 +62,19 @@ export default async function AdminDashboard() {
 
   return (
     <div className="space-y-8">
+      <Tour id="intro" />
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-xl font-black sm:text-2xl">Обзор</h1>
         <Link
           href="/admin/articles/new"
+          data-tour="new-article"
           className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white hover:bg-accent-hover"
         >
           + Новая новость
         </Link>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+      <div data-tour="stats" className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         {stats.map((s) => (
           <div key={s.label} className="rounded-xl border border-line bg-surface p-4">
             <p className="text-2xl font-black">{s.value}</p>
@@ -90,7 +93,7 @@ export default async function AdminDashboard() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-3 gap-3">
+        <div data-tour="question-stats" className="grid grid-cols-3 gap-3">
           {questionStats.map((s) => (
             <div
               key={s.label}
